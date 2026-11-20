@@ -76,3 +76,8 @@ fieldset{border:0;padding:0;margin:0}legend{margin-bottom:10px}
 .closed-toggle{display:flex!important;align-items:center;gap:6px!important;white-space:nowrap}
 .closed-toggle input{width:16px}
 @media(max-width:760px){.hours-row{grid-template-columns:1fr 1fr}.hours-row strong{grid-column:1/-1}}
+
+.review-form{display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:100%;margin-top:10px}
+.review-form select{width:auto;min-width:90px}
+.review-form input{flex:1;min-width:150px}
+.review-complete{margin:0;font-size:.85rem}
