@@ -71,3 +71,8 @@ fieldset{border:0;padding:0;margin:0}legend{margin-bottom:10px}
 .admin-controls select{min-width:145px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:760px){.admin-grid{grid-template-columns:1fr}.admin-row{align-items:flex-start;flex-direction:column}.admin-controls{width:100%}.admin-controls select{flex:1}}
+
+.hours-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(110px,1fr) minmax(110px,1fr) auto auto;align-items:center;gap:10px}
+.closed-toggle{display:flex!important;align-items:center;gap:6px!important;white-space:nowrap}
+.closed-toggle input{width:16px}
+@media(max-width:760px){.hours-row{grid-template-columns:1fr 1fr}.hours-row strong{grid-column:1/-1}}
