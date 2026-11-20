@@ -78,7 +78,7 @@ router.patch("/appointments/:id/status", async (req, res, next) => {
       .select("id, status, cancellation_reason")
       .single();
     if (error) {
-      if (error.code === "PGRST116") return res.status(404).json({ error: "Barber not found" });
+      if (error.code === "PGRST116") return res.status(409).json({ error: "Appointment status changed concurrently; refresh and try again" });
       return next(error);
     }
     return res.json({ data });
@@ -208,7 +208,7 @@ router.patch("/barbers/:id", async (req, res, next) => {
     }
     const { data, error } = await req.supabase.from("barbers").update({ is_active: isActive }).eq("id", id).select().single();
     if (error) {
-      if (error.code === "PGRST116") return res.status(409).json({ error: "Appointment status changed concurrently; refresh and try again" });
+      if (error.code === "PGRST116") return res.status(404).json({ error: "Barber not found" });
       return next(error);
     }
     return res.json({ data });
