@@ -189,12 +189,15 @@ async function handleBooking(event) {
 async function loadAdminDashboard() {
   showMessage("#admin-appointments-message", "กำลังโหลดข้อมูลผู้ดูแล...");
   try {
-    const [appointments, services, barbers] = await Promise.all([
-      api("/api/admin/appointments"), api("/api/admin/services"), api("/api/admin/barbers")
+    const [appointments, services, barbers, candidates, hours] = await Promise.all([
+      api("/api/admin/appointments"), api("/api/admin/services"), api("/api/admin/barbers"),
+      api("/api/admin/barber-candidates"), api("/api/admin/business-hours")
     ]);
     renderAdminAppointments(appointments.data || []);
     renderAdminServices(services.data || []);
     renderAdminBarbers(barbers.data || []);
+    renderBarberCandidates(candidates.data || []);
+    renderAdminHours(hours.data || []);
     showMessage("#admin-appointments-message", "");
   } catch (error) {
     showMessage("#admin-appointments-message", error.message, true);
@@ -270,6 +273,63 @@ function renderAdminBarbers(rows) {
   });
 }
 
+
+function renderBarberCandidates(rows) {
+  const select = $("#barber-profile-select");
+  const current = select.value;
+  select.replaceChildren(new Option("เลือกบัญชีที่มีอยู่", ""));
+  rows.forEach((profile) => select.add(new Option(`${profile.full_name} (${profile.role})`, profile.id)));
+  if (rows.some((profile) => profile.id === current)) select.value = current;
+  if (!rows.length) {
+    const option = new Option("ไม่มีบัญชีที่ยังไม่ได้ผูกเป็นช่าง", "");
+    option.disabled = true; select.add(option);
+  }
+}
+
+function renderAdminHours(rows) {
+  const list = $("#admin-hours"); list.replaceChildren();
+  const days = ["วันอาทิตย์","วันจันทร์","วันอังคาร","วันพุธ","วันพฤหัสบดี","วันศุกร์","วันเสาร์"];
+  rows.forEach((item) => {
+    const form = document.createElement("form"); form.className = "admin-row hours-row";
+    const day = document.createElement("strong"); day.textContent = days[item.weekday];
+    const open = document.createElement("input"); open.type = "time"; open.value = item.opens_at?.slice(0,5) || "10:00"; open.disabled = item.is_closed; open.setAttribute("aria-label", "เวลาเปิด");
+    const close = document.createElement("input"); close.type = "time"; close.value = item.closes_at?.slice(0,5) || "20:00"; close.disabled = item.is_closed; close.setAttribute("aria-label", "เวลาปิด");
+    const closedLabel = document.createElement("label"); closedLabel.className = "closed-toggle";
+    const closed = document.createElement("input"); closed.type = "checkbox"; closed.checked = item.is_closed;
+    closed.addEventListener("change", () => { open.disabled = closed.checked; close.disabled = closed.checked; });
+    closedLabel.append(closed, document.createTextNode("ปิด"));
+    const save = document.createElement("button"); save.className = "button button-quiet"; save.type = "submit"; save.textContent = "บันทึก";
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault(); save.disabled = true;
+      try {
+        await api(`/api/admin/business-hours/${item.weekday}`, { method: "PATCH", body: JSON.stringify({
+          opensAt: open.value, closesAt: close.value, isClosed: closed.checked
+        })});
+        showMessage("#admin-appointments-message", `บันทึกเวลาเปิดร้าน ${days[item.weekday]} แล้ว`);
+      } catch (error) { showMessage("#admin-appointments-message", error.message, true); }
+      finally { save.disabled = false; }
+    });
+    form.append(day, open, close, closedLabel, save); list.append(form);
+  });
+}
+
+async function handleAdminBarberCreate(event) {
+  event.preventDefault();
+  const button = event.submitter; button.disabled = true;
+  try {
+    await api("/api/admin/barbers", { method: "POST", body: JSON.stringify({
+      profileId: $("#barber-profile-select").value,
+      displayName: $("#barber-display-name").value.trim(),
+      bio: $("#barber-bio").value.trim() || null,
+      experienceYears: Number($("#barber-experience").value)
+    })});
+    $("#admin-barber-form").reset();
+    showMessage("#admin-barber-message", "เพิ่มช่างแล้ว");
+    await loadAdminDashboard(); await loadPublicData();
+  } catch (error) { showMessage("#admin-barber-message", error.message, true); }
+  finally { button.disabled = false; }
+}
+
 async function handleAdminServiceCreate(event) {
   event.preventDefault();
   const button = event.submitter; button.disabled = true;
@@ -295,6 +355,7 @@ async function init() {
   $("#refresh-bookings").addEventListener("click", loadAppointments);
   $("#admin-refresh").addEventListener("click", loadAdminDashboard);
   $("#admin-service-form").addEventListener("submit", handleAdminServiceCreate);
+  $("#admin-barber-form").addEventListener("submit", handleAdminBarberCreate);
   $("#signout-button").addEventListener("click", async () => {
     await state.supabase.auth.signOut();
     window.location.reload();
