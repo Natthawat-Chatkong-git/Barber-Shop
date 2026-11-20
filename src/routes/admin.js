@@ -106,7 +106,10 @@ router.post("/services", async (req, res, next) => {
       name: name.trim(), description: typeof description === "string" ? description.trim() || null : null,
       duration_minutes: durationMinutes, price, is_active: true
     }).select().single();
-    if (error) return next(error);
+    if (error) {
+      if (error.code === "23505") return res.status(409).json({ error: "มีบริการชื่อนี้อยู่แล้ว" });
+      return next(error);
+    }
     return res.status(201).json({ data });
   } catch (error) { return next(error); }
 });
@@ -185,6 +188,7 @@ router.post("/barbers", async (req, res, next) => {
     });
     if (error) {
       if (error.code === "23505") return res.status(409).json({ error: "This profile is already assigned to a barber" });
+      if (error.code === "22023") return res.status(400).json({ error: "Select a valid non-admin user profile" });
       if (error.code === "42501") return res.status(403).json({ error: "Administrator access required" });
       return next(error);
     }
@@ -200,7 +204,10 @@ router.patch("/barbers/:id", async (req, res, next) => {
       return res.status(400).json({ error: "Invalid barber ID or active state" });
     }
     const { data, error } = await req.supabase.from("barbers").update({ is_active: isActive }).eq("id", id).select().single();
-    if (error) return next(error);
+    if (error) {
+      if (error.code === "PGRST116") return res.status(409).json({ error: "Appointment status changed concurrently; refresh and try again" });
+      return next(error);
+    }
     return res.json({ data });
   } catch (error) { return next(error); }
 });
