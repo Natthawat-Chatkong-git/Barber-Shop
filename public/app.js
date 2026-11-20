@@ -295,8 +295,6 @@ async function init() {
   $("#refresh-bookings").addEventListener("click", loadAppointments);
   $("#admin-refresh").addEventListener("click", loadAdminDashboard);
   $("#admin-service-form").addEventListener("submit", handleAdminServiceCreate);
-  $("#admin-refresh").addEventListener("click", loadAdminDashboard);
-  $("#admin-service-form").addEventListener("submit", handleAdminServiceCreate);
   $("#signout-button").addEventListener("click", async () => {
     await state.supabase.auth.signOut();
     window.location.reload();
