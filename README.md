@@ -57,7 +57,7 @@
 - Register and sign in with email/password using Supabase Auth.
 - Email confirmation is required when enabled in Supabase Auth settings.
 - Choose one or more services, an optional barber, and a date/time in Asia/Bangkok.
-- Create a booking and view the signed-in customer's booking history.
+- Create a booking, view booking history, and cancel pending/confirmed future bookings.
 
 The database booking function validates that the appointment is in the future, within configured business hours, uses active services, and does not overlap an active booking for the selected barber. When no barber is selected, the database chooses an available active barber. At least one active barber profile must exist before a booking can succeed; the current project has no barber profiles yet.
 
@@ -82,6 +82,7 @@ The admin section is visible only to a signed-in profile whose database role is 
 - `GET /api/me` — signed-in user's profile
 - `GET /api/appointments` — signed-in user's bookings
 - `POST /api/appointments` — create a booking
+- `POST /api/appointments/:id/cancel` — cancel the signed-in customer's eligible future booking
 - `/api/admin/*` — role-protected appointment, service, barber, and opening-hours management
 - `GET /api/reviews/mine` and `POST /api/reviews` — customer's own reviews and review submission
 
@@ -161,6 +162,6 @@ GitHub Actions runs the Node.js 26 unit test suite and JavaScript syntax checks 
 
 Implemented: database schema and RLS, hardened booking RPC, customer authentication UI, service catalogue, barber selection, booking creation/history, customer reviews, protected admin APIs, admin service/barber provisioning, opening-hours management, appointment status workflow, unit tests, CI workflow, and Docker image.
 
-Not yet implemented: payment processing, customer self-service cancellation/rescheduling, customer reviews UI, advanced availability calendar/slot preview, end-to-end browser/API tests, committed npm lockfile, SMTP setup, and production deployment.
+Not yet implemented: payment processing, customer self-service rescheduling, advanced availability calendar/slot preview, end-to-end browser/API tests, committed npm lockfile, SMTP setup, and production deployment.
 
 Before production use, install dependencies, run the application locally, configure Supabase Auth redirect URLs and email delivery, and complete browser/API tests with real customer and administrator accounts.
