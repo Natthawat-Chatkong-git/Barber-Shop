@@ -90,6 +90,10 @@ async function loadProfile() {
   $("#booking-panel").classList.remove("hidden");
   $("#my-appointments").classList.remove("hidden");
   await loadAppointments();
+  if (state.profile.role === "admin") {
+    $("#admin-panel").classList.remove("hidden");
+    await loadAdminDashboard();
+  }
 }
 
 async function loadAppointments() {
@@ -282,12 +286,17 @@ async function handleAdminServiceCreate(event) {
   } catch (error) { showMessage("#admin-service-message", error.message, true); }
   finally { button.disabled = false; }
 }
-\nasync function init() {
+
+async function init() {
   $("#year").textContent = new Date().getFullYear();
   document.querySelectorAll("[data-auth-mode]").forEach((button) => button.addEventListener("click", () => setAuthMode(button.dataset.authMode)));
   $("#auth-form").addEventListener("submit", handleAuth);
   $("#booking-form").addEventListener("submit", handleBooking);
-  $("#refresh-bookings").addEventListener("click", loadAppointments);\n  $("#admin-refresh").addEventListener("click", loadAdminDashboard);\n  $("#admin-service-form").addEventListener("submit", handleAdminServiceCreate);
+  $("#refresh-bookings").addEventListener("click", loadAppointments);
+  $("#admin-refresh").addEventListener("click", loadAdminDashboard);
+  $("#admin-service-form").addEventListener("submit", handleAdminServiceCreate);
+  $("#admin-refresh").addEventListener("click", loadAdminDashboard);
+  $("#admin-service-form").addEventListener("submit", handleAdminServiceCreate);
   $("#signout-button").addEventListener("click", async () => {
     await state.supabase.auth.signOut();
     window.location.reload();
