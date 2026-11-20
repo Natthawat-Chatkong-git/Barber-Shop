@@ -181,12 +181,113 @@ async function handleBooking(event) {
   }
 }
 
-async function init() {
+
+async function loadAdminDashboard() {
+  showMessage("#admin-appointments-message", "กำลังโหลดข้อมูลผู้ดูแล...");
+  try {
+    const [appointments, services, barbers] = await Promise.all([
+      api("/api/admin/appointments"), api("/api/admin/services"), api("/api/admin/barbers")
+    ]);
+    renderAdminAppointments(appointments.data || []);
+    renderAdminServices(services.data || []);
+    renderAdminBarbers(barbers.data || []);
+    showMessage("#admin-appointments-message", "");
+  } catch (error) {
+    showMessage("#admin-appointments-message", error.message, true);
+  }
+}
+
+function renderAdminAppointments(rows) {
+  const list = $("#admin-appointments");
+  list.replaceChildren();
+  if (!rows.length) {
+    const empty = document.createElement("p"); empty.className = "muted"; empty.textContent = "ยังไม่มีรายการจอง"; list.append(empty); return;
+  }
+  rows.forEach((item) => {
+    const card = document.createElement("article"); card.className = "admin-row";
+    const info = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = item.profiles?.full_name || "ลูกค้า";
+    const detail = document.createElement("p"); detail.className = "muted";
+    const when = new Date(item.starts_at).toLocaleString("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "medium", timeStyle: "short" });
+    detail.textContent = `${when} · ${(item.appointment_services || []).map((s) => s.service_name).join(", ")} · ${item.barbers?.display_name || "ช่าง"}`;
+    info.append(title, detail);
+    const controls = document.createElement("div"); controls.className = "admin-controls";
+    const select = document.createElement("select");
+    ["pending","confirmed","in_progress","completed","cancelled","no_show"].forEach((status) => select.add(new Option(statusLabel(status), status)));
+    select.value = item.status;
+    const save = document.createElement("button"); save.className = "button button-quiet"; save.type = "button"; save.textContent = "บันทึก";
+    save.addEventListener("click", async () => {
+      save.disabled = true;
+      try {
+        await api(`/api/admin/appointments/${item.id}/status`, { method: "PATCH", body: JSON.stringify({ status: select.value }) });
+        showMessage("#admin-appointments-message", "อัปเดตสถานะคิวแล้ว");
+        await loadAppointments();
+      } catch (error) { showMessage("#admin-appointments-message", error.message, true); }
+      finally { save.disabled = false; }
+    });
+    controls.append(select, save); card.append(info, controls); list.append(card);
+  });
+}
+
+function renderAdminServices(rows) {
+  const list = $("#admin-services"); list.replaceChildren();
+  rows.forEach((item) => {
+    const row = document.createElement("div"); row.className = "admin-row";
+    const info = document.createElement("div");
+    const title = document.createElement("strong"); title.textContent = item.name;
+    const detail = document.createElement("p"); detail.className = "muted"; detail.textContent = `${money(item.price)} · ${item.duration_minutes} นาที`;
+    info.append(title, detail);
+    const toggle = document.createElement("button"); toggle.className = "button button-quiet"; toggle.type = "button"; toggle.textContent = item.is_active ? "ปิดบริการ" : "เปิดบริการ";
+    toggle.addEventListener("click", async () => {
+      toggle.disabled = true;
+      try { await api(`/api/admin/services/${item.id}`, { method: "PATCH", body: JSON.stringify({ isActive: !item.is_active }) }); await loadAdminDashboard(); await loadPublicData(); }
+      catch (error) { showMessage("#admin-service-message", error.message, true); }
+      finally { toggle.disabled = false; }
+    });
+    row.append(info, toggle); list.append(row);
+  });
+}
+
+function renderAdminBarbers(rows) {
+  const list = $("#admin-barbers"); list.replaceChildren();
+  if (!rows.length) { const empty = document.createElement("p"); empty.className = "muted"; empty.textContent = "ยังไม่มีข้อมูลช่าง กรุณาเพิ่มบัญชีช่างก่อน"; list.append(empty); return; }
+  rows.forEach((item) => {
+    const row = document.createElement("div"); row.className = "admin-row";
+    const name = document.createElement("strong"); name.textContent = item.display_name;
+    const toggle = document.createElement("button"); toggle.className = "button button-quiet"; toggle.type = "button"; toggle.textContent = item.is_active ? "ปิดรับจอง" : "เปิดรับจอง";
+    toggle.addEventListener("click", async () => {
+      toggle.disabled = true;
+      try { await api(`/api/admin/barbers/${item.id}`, { method: "PATCH", body: JSON.stringify({ isActive: !item.is_active }) }); await loadAdminDashboard(); await loadPublicData(); }
+      catch (error) { showMessage("#admin-appointments-message", error.message, true); }
+      finally { toggle.disabled = false; }
+    });
+    row.append(name, toggle); list.append(row);
+  });
+}
+
+async function handleAdminServiceCreate(event) {
+  event.preventDefault();
+  const button = event.submitter; button.disabled = true;
+  try {
+    await api("/api/admin/services", { method: "POST", body: JSON.stringify({
+      name: $("#new-service-name").value.trim(),
+      description: $("#new-service-description").value.trim(),
+      durationMinutes: Number($("#new-service-duration").value),
+      price: Number($("#new-service-price").value)
+    })});
+    $("#admin-service-form").reset();
+    showMessage("#admin-service-message", "เพิ่มบริการแล้ว");
+    await loadAdminDashboard(); await loadPublicData();
+  } catch (error) { showMessage("#admin-service-message", error.message, true); }
+  finally { button.disabled = false; }
+}
+\nasync function init() {
   $("#year").textContent = new Date().getFullYear();
   document.querySelectorAll("[data-auth-mode]").forEach((button) => button.addEventListener("click", () => setAuthMode(button.dataset.authMode)));
   $("#auth-form").addEventListener("submit", handleAuth);
   $("#booking-form").addEventListener("submit", handleBooking);
-  $("#refresh-bookings").addEventListener("click", loadAppointments);
+  $("#refresh-bookings").addEventListener("click", loadAppointments);\n  $("#admin-refresh").addEventListener("click", loadAdminDashboard);\n  $("#admin-service-form").addEventListener("submit", handleAdminServiceCreate);
   $("#signout-button").addEventListener("click", async () => {
     await state.supabase.auth.signOut();
     window.location.reload();
