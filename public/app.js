@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.119.2";
 
 const $ = (selector) => document.querySelector(selector);
-const state = { supabase: null, services: [], barbers: [], profile: null, authMode: "login" };
+const state = { supabase: null, services: [], barbers: [], profile: null, reviews: [], authMode: "login" };
 const money = (value) => new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 }).format(Number(value));
 const escapeText = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 
@@ -99,8 +99,10 @@ async function loadProfile() {
 async function loadAppointments() {
   showMessage("#appointments-state", "กำลังโหลดรายการจอง...");
   try {
-    const result = await api("/api/appointments");
+    const [result, reviewResult] = await Promise.all([api("/api/appointments"), api("/api/reviews/mine")]);
     const rows = result.data || [];
+    state.reviews = reviewResult.data || [];
+    const reviewed = new Set(state.reviews.map((review) => review.appointment_id));
     $("#appointments-state").textContent = rows.length ? "" : "ยังไม่มีรายการจอง";
     $("#appointments-list").replaceChildren(...rows.map((item) => {
       const card = document.createElement("article");
@@ -109,6 +111,37 @@ async function loadAppointments() {
       const serviceNames = (item.appointment_services || []).map((service) => service.service_name).join(", ");
       const barber = item.barbers?.display_name || "ช่าง";
       card.innerHTML = `<div><strong>${escapeText(serviceNames || "รายการบริการ")}</strong><p class="muted">${date.toLocaleString("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "medium", timeStyle: "short" })} · ${escapeText(barber)}</p></div><span class="status status-${escapeText(item.status)}">${statusLabel(item.status)}</span>`;
+      if (item.status === "completed") {
+        if (reviewed.has(item.id)) {
+          const reviewedLabel = document.createElement("p");
+          reviewedLabel.className = "muted review-complete";
+          reviewedLabel.textContent = "ให้คะแนนแล้ว";
+          card.append(reviewedLabel);
+        } else {
+          const form = document.createElement("form");
+          form.className = "review-form";
+          const rating = document.createElement("select");
+          rating.setAttribute("aria-label", "คะแนนรีวิว");
+          for (let score = 5; score >= 1; score--) rating.add(new Option("★".repeat(score), String(score)));
+          const comment = document.createElement("input");
+          comment.type = "text"; comment.maxLength = 1000; comment.placeholder = "ความคิดเห็น (ไม่บังคับ)";
+          const submit = document.createElement("button");
+          submit.type = "submit"; submit.className = "button button-quiet"; submit.textContent = "ส่งรีวิว";
+          form.append(rating, comment, submit);
+          form.addEventListener("submit", async (event) => {
+            event.preventDefault(); submit.disabled = true;
+            try {
+              await api("/api/reviews", { method: "POST", body: JSON.stringify({
+                appointmentId: item.id, rating: Number(rating.value), comment: comment.value.trim() || null
+              })});
+              showMessage("#appointments-state", "ขอบคุณสำหรับรีวิว");
+              await loadAppointments();
+            } catch (error) { showMessage("#appointments-state", error.message, true); }
+            finally { submit.disabled = false; }
+          });
+          card.append(form);
+        }
+      }
       return card;
     }));
   } catch (error) {
