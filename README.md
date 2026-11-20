@@ -67,7 +67,9 @@ The admin section is visible only to a signed-in profile whose database role is 
 
 - View recent appointments and update their status.
 - Add services and activate/deactivate existing services.
-- Activate/deactivate barber profiles.
+- Create barber records linked to existing user profiles, and activate/deactivate barber profiles.
+- Configure opening and closing times for each weekday.
+- Enforce a controlled appointment status transition workflow.
 - Protected admin endpoints enforce the role on the server and rely on database RLS policies.
 
 ## API routes
@@ -125,15 +127,39 @@ Never let a public signup request set `profiles.role`. The application does not 
 - The project uses Row Level Security. Keep RLS enabled.
 - The server uses the publishable key and forwards each signed-in user's access token so database RLS remains in effect.
 - Never expose a Supabase secret/service-role key in browser code or commit credentials.
-- The booking RPC is executable by `authenticated` only; anonymous and PUBLIC execution were revoked. It remains `SECURITY DEFINER` because it performs the validated multi-table booking transaction, and its body requires `auth.uid()`.
+- The public booking RPC is a `SECURITY INVOKER` wrapper executable by `authenticated` only. It delegates the validated multi-table booking transaction to `private.create_appointment`, a non-exposed `SECURITY DEFINER` function that requires `auth.uid()`. Anonymous and PUBLIC execution are revoked. The Supabase Security Advisor returned no security lints after this change.
 - Admin appointment status updates are restricted by an RLS policy using `private.is_admin()`.
 - Use HTTPS in production.
 - The default rate-limit store is in-memory. Configure a shared store before running multiple application instances.
 
+## Container build
+
+Build and run the application with Docker:
+
+```bash
+docker build -t barber-shop .
+docker run --rm -p 3000:3000 --env-file .env barber-shop
+```
+
+The image runs as the unprivileged `node` user and includes an HTTP health check. Do not bake `.env` into the image.
+
+## Supabase Auth configuration
+
+In Supabase Dashboard → Authentication → URL Configuration:
+
+- Set the Site URL to the final application origin.
+- Add the local development origin (for example `http://localhost:3000`) and the deployed origin to Redirect URLs.
+- Configure SMTP/email delivery before enabling public registration for real customers.
+- Test email confirmation and password reset links against the configured origins.
+
+## CI
+
+GitHub Actions runs the Node.js 26 unit test suite and JavaScript syntax checks on pushes and pull requests to `main`.
+
 ## Current implementation status
 
-Implemented: database schema and RLS, booking RPC, customer authentication UI, service catalogue, barber selection, booking creation/history, protected admin APIs and basic admin UI.
+Implemented: database schema and RLS, hardened booking RPC, customer authentication UI, service catalogue, barber selection, booking creation/history, protected admin APIs, admin service/barber management, opening-hours management, appointment status workflow, unit tests, CI workflow, and Docker image.
 
-Not yet implemented: payment processing, cancellation/rescheduling workflows for customers, barber account onboarding, advanced availability calendar/slot preview, automated end-to-end tests, and production deployment.
+Not yet implemented: payment processing, customer self-service cancellation/rescheduling, customer reviews UI, advanced availability calendar/slot preview, end-to-end browser/API tests, committed npm lockfile, SMTP setup, and production deployment.
 
 Before production use, install dependencies, run the application locally, configure Supabase Auth redirect URLs and email delivery, and complete browser/API tests with real customer and administrator accounts.
