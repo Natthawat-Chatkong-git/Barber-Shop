@@ -233,7 +233,7 @@ async function loadAvailability() {
     const barberId = $("#barber-select").value;
     if (barberId) params.set("barberId", barberId);
     const result = await api(`/api/availability?${params.toString()}`);
-    if (requestId !== state.walkInAvailabilityRequest) return;
+    if (requestId !== state.availabilityRequest) return;
     const slots = result.data || [];
     select.replaceChildren(new Option(slots.length ? "เลือกเวลา" : "ไม่มีเวลาว่าง", ""));
     slots.forEach((slot) => {
@@ -448,7 +448,7 @@ async function loadWalkInAvailability() {
     const barberId = $("#walkin-barber").value;
     if (barberId) params.set("barberId", barberId);
     const result = await api("/api/availability?" + params.toString());
-    if (requestId !== state.availabilityRequest) return;
+    if (requestId !== state.walkInAvailabilityRequest) return;
     const slots = result.data || [];
     select.replaceChildren(new Option(slots.length ? "เลือกเวลา" : "ไม่มีเวลาว่าง", ""));
     slots.forEach((slot) => {
@@ -459,7 +459,7 @@ async function loadWalkInAvailability() {
     });
     select.disabled = slots.length === 0;
   } catch (error) {
-    if (requestId !== state.availabilityRequest) return;
+    if (requestId !== state.walkInAvailabilityRequest) return;
     select.replaceChildren(new Option("โหลดเวลาว่างไม่สำเร็จ", ""));
     showMessage("#admin-walkin-message", error.message, true);
   }
