@@ -2,6 +2,7 @@ import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import { publicSupabase } from "../lib/supabase.js";
 import { requireAuth } from "../middleware/require-auth.js";
+import { isValidUuid, isValidDateOnly } from "../lib/validation.js";
 import servicesRouter from "./services.js";
 import appointmentsRouter from "./appointments.js";
 import adminRouter from "./admin.js";
@@ -69,6 +70,25 @@ router.get("/me", requireAuth, async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
+});
+
+router.get("/availability", requireAuth, async (req, res, next) => {
+  try {
+    const serviceIds = typeof req.query.serviceIds === "string" ? req.query.serviceIds.split(",") : [];
+    const date = req.query.date;
+    const barberId = req.query.barberId || null;
+    if (!serviceIds.length || serviceIds.length > 10 || !serviceIds.every(isValidUuid) ||
+        !isValidDateOnly(date) || (barberId !== null && !isValidUuid(barberId))) {
+      return res.status(400).json({ error: "Invalid availability query" });
+    }
+    const { data, error } = await req.supabase.rpc("get_available_slots", {
+      p_service_ids: serviceIds,
+      p_date: date,
+      p_barber_id: barberId
+    });
+    if (error) return next(error);
+    return res.json({ data: (data || []).map((slot) => slot.slot_start), timezone: "Asia/Bangkok" });
+  } catch (error) { return next(error); }
 });
 
 router.use("/services", servicesRouter);
