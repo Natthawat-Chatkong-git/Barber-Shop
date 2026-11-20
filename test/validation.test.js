@@ -4,7 +4,8 @@ import {
   isValidUuid,
   isValidZonedTimestamp,
   canTransitionAppointment,
-  isValidBusinessHours
+  isValidBusinessHours,
+  isValidDateOnly
 } from "../src/lib/validation.js";
 
 test("UUID validation accepts valid UUIDs and rejects malformed values", () => {
@@ -31,4 +32,10 @@ test("business hours require valid 24-hour times and a positive interval", () =>
   assert.equal(isValidBusinessHours("10:00", "20:00"), true);
   assert.equal(isValidBusinessHours("20:00", "10:00"), false);
   assert.equal(isValidBusinessHours("25:00", "26:00"), false);
+});
+
+test("date-only values must be valid calendar dates", () => {
+  assert.equal(isValidDateOnly("2026-11-23"), true);
+  assert.equal(isValidDateOnly("2026-02-30"), false);
+  assert.equal(isValidDateOnly("2026-11"), false);
 });
