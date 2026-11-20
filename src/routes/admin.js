@@ -41,7 +41,8 @@ router.post("/walk-ins", async (req, res, next) => {
       p_customer_note: customerNote
     });
     if (error) {
-      if (["22023", "23P01"].includes(error.code)) return res.status(409).json({ error: error.message });
+      if (error.code === "23P01") return res.status(409).json({ error: "ช่วงเวลานี้ถูกจองไปแล้ว กรุณาเลือกเวลาอื่น" });
+      if (error.code === "22023") return res.status(409).json({ error: "ข้อมูลคิว Walk-in ไม่ถูกต้องหรือบริการไม่พร้อมใช้งาน" });
       if (error.code === "42501") return res.status(403).json({ error: "Administrator access required" });
       return next(error);
     }
