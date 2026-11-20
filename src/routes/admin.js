@@ -176,9 +176,8 @@ router.patch("/business-hours/:weekday", async (req, res, next) => {
   try {
     const weekday = Number(req.params.weekday);
     const { opensAt, closesAt, isClosed } = req.body ?? {};
-    const timePattern = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
     if (!Number.isInteger(weekday) || weekday < 0 || weekday > 6 || typeof isClosed !== "boolean" ||
-        (!isClosed && (!timePattern.test(opensAt || "") || !timePattern.test(closesAt || "") || opensAt >= closesAt))) {
+        (!isClosed && !isValidBusinessHours(opensAt, closesAt))) {
       return res.status(400).json({ error: "Invalid business hours" });
     }
     const update = { is_closed: isClosed, opens_at: isClosed ? null : opensAt, closes_at: isClosed ? null : closesAt };
