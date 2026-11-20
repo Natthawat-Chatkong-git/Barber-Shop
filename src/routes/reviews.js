@@ -4,6 +4,16 @@ import { isValidUuid } from "../lib/validation.js";
 
 const router = Router();
 
+router.get("/mine", requireAuth, async (req, res, next) => {
+  try {
+    const { data, error } = await req.supabase.from("reviews")
+      .select("appointment_id, rating, comment, created_at")
+      .eq("customer_id", req.user.id);
+    if (error) return next(error);
+    return res.json({ data });
+  } catch (error) { return next(error); }
+});
+
 router.post("/", requireAuth, async (req, res, next) => {
   try {
     const { appointmentId, rating, comment = null } = req.body ?? {};
