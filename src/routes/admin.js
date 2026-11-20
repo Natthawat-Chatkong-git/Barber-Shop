@@ -29,7 +29,10 @@ router.patch("/appointments/:id/status", async (req, res, next) => {
     }
     const { data: current, error: currentError } = await req.supabase
       .from("appointments").select("status").eq("id", id).single();
-    if (currentError) return next(currentError);
+    if (currentError) {
+      if (currentError.code === "PGRST116") return res.status(404).json({ error: "Appointment not found" });
+      return next(currentError);
+    }
     if (!canTransitionAppointment(current.status, status)) {
       return res.status(409).json({ error: `Cannot change appointment from ${current.status} to ${status}` });
     }
@@ -64,6 +67,7 @@ router.post("/services", async (req, res, next) => {
   try {
     const { name, description = null, durationMinutes, price } = req.body ?? {};
     if (typeof name !== "string" || !name.trim() || name.length > 100 ||
+        (description !== null && (typeof description !== "string" || description.length > 300)) ||
         !Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 600 ||
         typeof price !== "number" || !Number.isFinite(price) || price < 0 || price > 100000) {
       return res.status(400).json({ error: "ข้อมูลบริการไม่ถูกต้อง" });
@@ -87,7 +91,10 @@ router.patch("/services/:id", async (req, res, next) => {
       if (typeof name !== "string" || !name.trim() || name.length > 100) return res.status(400).json({ error: "Invalid service name" });
       update.name = name.trim();
     }
-    if (description !== undefined) update.description = typeof description === "string" ? description.trim() || null : null;
+    if (description !== undefined) {
+      if (description !== null && (typeof description !== "string" || description.length > 300)) return res.status(400).json({ error: "Invalid service description" });
+      update.description = typeof description === "string" ? description.trim() || null : null;
+    }
     if (durationMinutes !== undefined) {
       if (!Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 600) return res.status(400).json({ error: "Invalid duration" });
       update.duration_minutes = durationMinutes;
