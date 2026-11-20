@@ -27,6 +27,20 @@ router.patch("/appointments/:id/status", async (req, res, next) => {
     if (!UUID_PATTERN.test(id) || !APPOINTMENT_STATUSES.has(status)) {
       return res.status(400).json({ error: "Invalid appointment ID or status" });
     }
+    const { data: current, error: currentError } = await req.supabase
+      .from("appointments").select("status").eq("id", id).single();
+    if (currentError) return next(currentError);
+    const transitions = {
+      pending: new Set(["confirmed", "cancelled"]),
+      confirmed: new Set(["in_progress", "cancelled", "no_show"]),
+      in_progress: new Set(["completed"]),
+      completed: new Set(),
+      cancelled: new Set(),
+      no_show: new Set()
+    };
+    if (current.status !== status && !transitions[current.status]?.has(status)) {
+      return res.status(409).json({ error: `Cannot change appointment from ${current.status} to ${status}` });
+    }
     if (cancellationReason !== null && (typeof cancellationReason !== "string" || cancellationReason.length > 500)) {
       return res.status(400).json({ error: "Cancellation reason must be at most 500 characters" });
     }
@@ -108,6 +122,38 @@ router.get("/barbers", async (req, res, next) => {
       .order("display_name");
     if (error) return next(error);
     return res.json({ data });
+  } catch (error) { return next(error); }
+});
+
+router.get("/barber-candidates", async (req, res, next) => {
+  try {
+    const [{ data: profiles, error: profileError }, { data: barbers, error: barberError }] = await Promise.all([
+      req.supabase.from("profiles").select("id, full_name, role").order("full_name"),
+      req.supabase.from("barbers").select("profile_id")
+    ]);
+    if (profileError) return next(profileError);
+    if (barberError) return next(barberError);
+    const assigned = new Set((barbers || []).map((barber) => barber.profile_id));
+    return res.json({ data: (profiles || []).filter((profile) => !assigned.has(profile.id)) });
+  } catch (error) { return next(error); }
+});
+
+router.post("/barbers", async (req, res, next) => {
+  try {
+    const { profileId, displayName, bio = null, experienceYears = 0 } = req.body ?? {};
+    if (!UUID_PATTERN.test(profileId || "") || typeof displayName !== "string" ||
+        !displayName.trim() || displayName.length > 100 ||
+        (bio !== null && (typeof bio !== "string" || bio.length > 1000)) ||
+        !Number.isInteger(experienceYears) || experienceYears < 0 || experienceYears > 80) {
+      return res.status(400).json({ error: "Invalid barber profile details" });
+    }
+    const { data, error } = await req.supabase.from("barbers").insert({
+      profile_id: profileId, display_name: displayName.trim(),
+      bio: typeof bio === "string" ? bio.trim() || null : null,
+      experience_years: experienceYears, is_active: true
+    }).select().single();
+    if (error) return next(error);
+    return res.status(201).json({ data });
   } catch (error) { return next(error); }
 });
 
