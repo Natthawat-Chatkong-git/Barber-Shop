@@ -4,30 +4,85 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Barber-Shop — ระบบบริการและจองคิวร้านตัดผม">
-  <title>Barber-Shop</title>
+  <meta name="theme-color" content="#171614">
+  <title>Barber-Shop | จองคิวร้านตัดผม</title>
+  <link rel="preconnect" href="https://esm.sh">
   <link rel="stylesheet" href="/styles.css">
-  <script src="/app.js" defer></script>
+  <script type="module" src="/app.js"></script>
 </head>
 <body>
-  <main class="container">
-    <header class="hero">
-      <p class="eyebrow">BARBER-SHOP</p>
-      <h1>บริการของเรา</h1>
-      <p class="muted">เลือกบริการที่ต้องการ แล้วติดต่อร้านเพื่อจองคิว</p>
-    </header>
+  <header class="topbar">
+    <a class="brand" href="/">BARBER<span>SHOP</span></a>
+    <div class="account">
+      <span id="account-label" class="muted">ยังไม่ได้เข้าสู่ระบบ</span>
+      <button id="signout-button" class="button button-quiet hidden" type="button">ออกจากระบบ</button>
+    </div>
+  </header>
 
-    <section aria-labelledby="services-heading">
+  <main class="container">
+    <section class="hero">
+      <p class="eyebrow">PRECISION · STYLE · CONFIDENCE</p>
+      <h1>ตัดผมให้เป็น<br><span>เรื่องง่าย</span></h1>
+      <p class="hero-copy">เลือกบริการ ช่าง และเวลาที่สะดวก แล้วจองคิวได้ทันที</p>
+      <a class="button button-primary" href="#booking">จองคิว</a>
+    </section>
+
+    <section class="section" aria-labelledby="services-heading">
       <div class="section-heading">
-        <h2 id="services-heading">รายการบริการ</h2>
+        <div><p class="eyebrow">OUR SERVICES</p><h2 id="services-heading">บริการของเรา</h2></div>
         <span id="service-count" class="muted"></span>
       </div>
       <p id="service-state" class="notice" role="status">กำลังโหลดบริการ...</p>
       <div id="service-list" class="service-grid"></div>
     </section>
 
-    <footer class="footer">
-      <p>เปิดให้บริการวันจันทร์–ศุกร์ เวลา 10:00–20:00 น.</p>
-    </footer>
+    <section id="booking" class="section booking-layout">
+      <div>
+        <p class="eyebrow">BOOK AN APPOINTMENT</p>
+        <h2>จองคิวออนไลน์</h2>
+        <p class="muted">กรุณาเข้าสู่ระบบก่อนจองคิว เวลาให้บริการตามเวลาประเทศไทย (UTC+7)</p>
+        <div id="auth-panel" class="panel">
+          <div class="tabs" role="tablist" aria-label="บัญชีผู้ใช้">
+            <button class="tab active" type="button" data-auth-mode="login">เข้าสู่ระบบ</button>
+            <button class="tab" type="button" data-auth-mode="signup">สมัครสมาชิก</button>
+          </div>
+          <form id="auth-form" class="form">
+            <label id="name-field" class="hidden">ชื่อ-นามสกุล<input id="full-name" name="fullName" autocomplete="name" maxlength="100"></label>
+            <label>อีเมล<input id="email" name="email" type="email" autocomplete="email" required></label>
+            <label>รหัสผ่าน<input id="password" name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+            <button id="auth-submit" class="button button-primary" type="submit">เข้าสู่ระบบ</button>
+            <p id="auth-message" class="notice" role="status"></p>
+          </form>
+        </div>
+      </div>
+
+      <div id="booking-panel" class="panel hidden">
+        <form id="booking-form" class="form">
+          <h3>รายละเอียดการจอง</h3>
+          <fieldset><legend>เลือกบริการ</legend><div id="booking-services" class="choice-list"></div></fieldset>
+          <label>ช่างตัดผม<select id="barber-select"><option value="">ช่างที่ว่าง (ระบบเลือกให้อัตโนมัติ)</option></select></label>
+          <label>วันที่และเวลา (เวลาไทย)<input id="booking-time" type="datetime-local" required></label>
+          <label>หมายเหตุ<textarea id="booking-note" rows="3" maxlength="500" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></textarea></label>
+          <div class="booking-total"><span>ยอดรวมโดยประมาณ</span><strong id="booking-total">฿0</strong></div>
+          <button class="button button-primary" type="submit">ยืนยันการจอง</button>
+          <p id="booking-message" class="notice" role="status"></p>
+        </form>
+      </div>
+    </section>
+
+    <section id="my-appointments" class="section hidden">
+      <div class="section-heading"><div><p class="eyebrow">YOUR BOOKINGS</p><h2>รายการจองของฉัน</h2></div><button id="refresh-bookings" class="button button-quiet" type="button">รีเฟรช</button></div>
+      <p id="appointments-state" class="notice" role="status"></p>
+      <div id="appointments-list" class="appointment-list"></div>
+    </section>
+
+    <section class="section hours">
+      <div><p class="eyebrow">OPENING HOURS</p><h2>เวลาเปิดให้บริการ</h2></div>
+      <p>วันจันทร์–ศุกร์ <strong>10:00–20:00 น.</strong><br><span class="muted">วันเสาร์–อาทิตย์ปิดทำการ</span></p>
+    </section>
   </main>
+
+  <footer class="footer"><span>BARBERSHOP</span><span>© <span id="year"></span> Barber-Shop</span></footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
