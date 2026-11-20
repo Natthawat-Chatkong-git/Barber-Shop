@@ -23,13 +23,19 @@ if (parsedUrl.protocol !== "https:" && parsedUrl.hostname !== "localhost") {
 }
 
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
+const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? "0");
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error("PORT must be a valid TCP port");
+}
+
+if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0 || trustProxyHops > 5) {
+  throw new Error("TRUST_PROXY_HOPS must be an integer from 0 to 5");
 }
 
 export const env = Object.freeze({
   nodeEnv: process.env.NODE_ENV ?? "development",
   port,
+  trustProxyHops,
   supabaseUrl: parsedUrl.toString().replace(/\/$/, ""),
   supabasePublishableKey: publishableKey
 });
