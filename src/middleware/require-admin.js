@@ -6,7 +6,10 @@ export async function requireAdmin(req, res, next) {
       .eq("id", req.user.id)
       .single();
 
-    if (error) return next(error);
+    if (error) {
+      if (error.code === "PGRST116") return res.status(403).json({ error: "Administrator access required" });
+      return next(error);
+    }
     if (data.role !== "admin") {
       return res.status(403).json({ error: "Administrator access required" });
     }
