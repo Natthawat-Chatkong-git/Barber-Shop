@@ -1,5 +1,3 @@
-import { requireAuth } from "./require-auth.js";
-
 export async function requireAdmin(req, res, next) {
   try {
     const { data, error } = await req.supabase
