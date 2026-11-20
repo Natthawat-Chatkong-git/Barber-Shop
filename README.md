@@ -130,10 +130,10 @@ Never let a public signup request set `profiles.role`. The application does not 
 - The project uses Row Level Security. Keep RLS enabled.
 - The server uses the publishable key and forwards each signed-in user's access token so database RLS remains in effect.
 - Never expose a Supabase secret/service-role key in browser code or commit credentials.
-- The public booking and barber-provisioning RPCs are `SECURITY INVOKER` wrappers executable by `authenticated` only. They delegate privileged transactions to functions in the non-exposed `private` schema, which validate `auth.uid()` and admin permissions. Anonymous and PUBLIC execution are revoked. The Supabase Security Advisor returned no security lints after these changes.
+- The public booking, barber-provisioning, cancellation, and availability RPCs are `SECURITY INVOKER` wrappers executable by `authenticated` only. They delegate database work to functions in the non-exposed `private` schema. The booking and cancellation functions require `auth.uid()`; barber provisioning additionally checks the caller is an administrator. Anonymous and PUBLIC execution are revoked. The Supabase Security Advisor returned no security lints after these changes.
 - Admin appointment status updates are restricted by an RLS policy using `private.is_admin()`.
 - Use HTTPS in production.
-- The default rate-limit store is in-memory. Configure a shared store before running multiple application instances.
+- The default rate-limit store is in-memory. Configure a shared store before running multiple application instances. Set `TRUST_PROXY_HOPS` to the exact number of trusted reverse proxies in front of the app (usually `1` on a single-proxy host); keep it `0` for direct local access.
 
 ## Container build
 
