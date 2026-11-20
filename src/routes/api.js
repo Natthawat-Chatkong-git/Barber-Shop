@@ -4,6 +4,7 @@ import { publicSupabase } from "../lib/supabase.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import servicesRouter from "./services.js";
 import appointmentsRouter from "./appointments.js";
+import adminRouter from "./admin.js";
 
 const router = Router();
 
@@ -71,5 +72,6 @@ router.get("/me", requireAuth, async (req, res, next) => {
 
 router.use("/services", servicesRouter);
 router.use("/appointments", bookingLimiter, appointmentsRouter);
+router.use("/admin", adminRouter);
 
 export default router;
