@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.119.2";
 
 const $ = (selector) => document.querySelector(selector);
-const state = { supabase: null, services: [], barbers: [], profile: null, reviews: [], availabilityRequest: 0, authMode: "login" };
+const state = { supabase: null, services: [], barbers: [], profile: null, reviews: [], availabilityRequest: 0, walkInAvailabilityRequest: 0, authMode: "login" };
 const money = (value) => new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 }).format(Number(value));
 const escapeText = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 
@@ -233,7 +233,7 @@ async function loadAvailability() {
     const barberId = $("#barber-select").value;
     if (barberId) params.set("barberId", barberId);
     const result = await api(`/api/availability?${params.toString()}`);
-    if (requestId !== state.availabilityRequest) return;
+    if (requestId !== state.walkInAvailabilityRequest) return;
     const slots = result.data || [];
     select.replaceChildren(new Option(slots.length ? "เลือกเวลา" : "ไม่มีเวลาว่าง", ""));
     slots.forEach((slot) => {
@@ -433,7 +433,7 @@ function renderWalkInOptions(services, barbers) {
 }
 
 async function loadWalkInAvailability() {
-  const requestId = ++state.availabilityRequest;
+  const requestId = ++state.walkInAvailabilityRequest;
   const date = $("#walkin-date").value;
   const serviceIds = [...$("#walkin-services").selectedOptions].map((option) => option.value);
   const select = $("#walkin-slot");
