@@ -20,6 +20,24 @@ router.get("/", requireAuth, async (req, res, next) => {
   }
 });
 
+router.post("/:id/cancel", requireAuth, async (req, res, next) => {
+  try {
+    if (!isValidUuid(req.params.id)) {
+      return res.status(400).json({ error: "Invalid appointment ID" });
+    }
+    const { data, error } = await req.supabase.rpc("cancel_appointment", {
+      p_appointment_id: req.params.id
+    });
+    if (error) {
+      if (error.code === "22023") return res.status(409).json({ error: error.message });
+      return next(error);
+    }
+    return res.json({ data: { appointmentId: data } });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post("/", requireAuth, async (req, res, next) => {
   try {
     const { serviceIds, startsAt, barberId = null, customerNote = null } = req.body ?? {};
