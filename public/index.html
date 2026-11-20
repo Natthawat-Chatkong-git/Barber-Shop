@@ -85,8 +85,15 @@
           <div class="form-row"><label>ระยะเวลา (นาที)<input id="new-service-duration" type="number" min="1" max="600" value="30" required></label><label>ราคา (บาท)<input id="new-service-price" type="number" min="0" step="1" required></label></div>
           <button class="button button-primary" type="submit">เพิ่มบริการ</button><p id="admin-service-message" class="notice" role="status"></p>
         </form><div id="admin-services" class="admin-list"></div></div>
-        <div class="panel"><h3>จัดการช่าง</h3><p class="muted">เปิดหรือปิดการรับจองของช่าง</p><div id="admin-barbers" class="admin-list"></div></div>
+        <div class="panel"><h3>จัดการช่าง</h3><form id="admin-barber-form" class="form">
+          <label>บัญชีผู้ใช้ช่าง<select id="barber-profile-select" required><option value="">เลือกบัญชีที่มีอยู่</option></select></label>
+          <label>ชื่อที่แสดง<input id="barber-display-name" required maxlength="100"></label>
+          <label>ประวัติ/รายละเอียด<input id="barber-bio" maxlength="1000"></label>
+          <label>ประสบการณ์ (ปี)<input id="barber-experience" type="number" min="0" max="80" value="0" required></label>
+          <button class="button button-primary" type="submit">เพิ่มช่าง</button><p id="admin-barber-message" class="notice" role="status"></p>
+        </form><div id="admin-barbers" class="admin-list"></div></div>
       </div>
+      <div class="panel admin-appointments"><h3>เวลาทำการ</h3><p class="muted">ตั้งค่าเวลาเปิดและปิดร้านแยกตามวัน</p><div id="admin-hours" class="admin-list"></div></div>
       <div class="panel admin-appointments"><div class="section-heading"><h3>จัดการคิวจอง</h3><button id="admin-refresh" class="button button-quiet" type="button">รีเฟรช</button></div><p id="admin-appointments-message" class="notice" role="status"></p><div id="admin-appointments" class="admin-list"></div></div>
     </section>
 
