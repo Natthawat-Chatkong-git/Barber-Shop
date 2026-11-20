@@ -48,7 +48,7 @@ function renderServices() {
     checkbox.type = "checkbox";
     checkbox.name = "serviceIds";
     checkbox.value = service.id;
-    checkbox.addEventListener("change", updateTotal);
+    checkbox.addEventListener("change", () => { updateTotal(); loadAvailability(); });
     const text = document.createElement("span");
     text.textContent = `${service.name} · ${money(service.price)} · ${service.duration_minutes} นาที`;
     label.append(checkbox, text);
@@ -90,6 +90,7 @@ async function loadProfile() {
   $("#booking-panel").classList.remove("hidden");
   $("#my-appointments").classList.remove("hidden");
   await loadAppointments();
+  await loadAvailability();
   if (state.profile.role === "admin") {
     $("#admin-panel").classList.remove("hidden");
     await loadAdminDashboard();
@@ -200,14 +201,56 @@ async function handleAuth(event) {
   }
 }
 
+
+function getNextOpenDate() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok", year: "numeric", month: "2-digit", day: "2-digit"
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const date = new Date(Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day)));
+  if (date.getUTCDay() === 6) date.setUTCDate(date.getUTCDate() + 2);
+  if (date.getUTCDay() === 0) date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+async function loadAvailability() {
+  const select = $("#booking-slot");
+  const date = $("#booking-date").value;
+  const serviceIds = [...document.querySelectorAll('input[name="serviceIds"]:checked')].map((input) => input.value);
+  select.replaceChildren(new Option("กำลังตรวจสอบเวลาว่าง...", ""));
+  select.disabled = true;
+  if (!state.profile || !date || !serviceIds.length) {
+    select.replaceChildren(new Option("เลือกบริการและวันที่ก่อน", ""));
+    showMessage("#availability-state", "เลือกบริการและวันที่เพื่อดูเวลาว่าง");
+    return;
+  }
+  try {
+    const params = new URLSearchParams({ date, serviceIds: serviceIds.join(",") });
+    const barberId = $("#barber-select").value;
+    if (barberId) params.set("barberId", barberId);
+    const result = await api(`/api/availability?${params.toString()}`);
+    const slots = result.data || [];
+    select.replaceChildren(new Option(slots.length ? "เลือกเวลา" : "ไม่มีเวลาว่าง", ""));
+    slots.forEach((slot) => {
+      const time = new Date(slot).toLocaleTimeString("th-TH", {
+        timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit"
+      });
+      select.add(new Option(time, slot));
+    });
+    select.disabled = slots.length === 0;
+    showMessage("#availability-state", slots.length ? `พบเวลาว่าง ${slots.length} ช่วง` : "ไม่มีเวลาว่างในวันที่เลือก");
+  } catch (error) {
+    select.replaceChildren(new Option("โหลดเวลาว่างไม่สำเร็จ", ""));
+    showMessage("#availability-state", error.message, true);
+  }
+}
+
 async function handleBooking(event) {
   event.preventDefault();
   const serviceIds = [...document.querySelectorAll('input[name="serviceIds"]:checked')].map((input) => input.value);
   if (!serviceIds.length) return showMessage("#booking-message", "กรุณาเลือกบริการอย่างน้อย 1 รายการ", true);
-  const localValue = $("#booking-time").value;
-  if (!localValue) return showMessage("#booking-message", "กรุณาเลือกวันที่และเวลา", true);
-  const startsAt = new Date(`${localValue}:00+07:00`);
-  if (Number.isNaN(startsAt.getTime())) return showMessage("#booking-message", "วันและเวลาไม่ถูกต้อง", true);
+  const startsAt = $("#booking-slot").value;
+  if (!startsAt) return showMessage("#booking-message", "กรุณาเลือกช่วงเวลาที่ว่าง", true);
 
   const submit = event.submitter;
   submit.disabled = true;
@@ -217,14 +260,18 @@ async function handleBooking(event) {
       method: "POST",
       body: JSON.stringify({
         serviceIds,
-        startsAt: startsAt.toISOString(),
+        startsAt,
         barberId: $("#barber-select").value || null,
         customerNote: $("#booking-note").value.trim() || null
       })
     });
     showMessage("#booking-message", "จองคิวสำเร็จ");
     $("#booking-form").reset();
+    $("#booking-date").value = getNextOpenDate();
+    $("#booking-slot").replaceChildren(new Option("เลือกบริการและวันที่ก่อน", ""));
+    $("#booking-slot").disabled = true;
     updateTotal();
+    await loadAvailability();
     await loadAppointments();
   } catch (error) {
     showMessage("#booking-message", error.message, true);
@@ -400,6 +447,10 @@ async function init() {
   document.querySelectorAll("[data-auth-mode]").forEach((button) => button.addEventListener("click", () => setAuthMode(button.dataset.authMode)));
   $("#auth-form").addEventListener("submit", handleAuth);
   $("#booking-form").addEventListener("submit", handleBooking);
+  $("#booking-date").min = getNextOpenDate();
+  $("#booking-date").value = getNextOpenDate();
+  $("#booking-date").addEventListener("change", loadAvailability);
+  $("#barber-select").addEventListener("change", loadAvailability);
   $("#refresh-bookings").addEventListener("click", loadAppointments);
   $("#admin-refresh").addEventListener("click", loadAdminDashboard);
   $("#admin-service-form").addEventListener("submit", handleAdminServiceCreate);
