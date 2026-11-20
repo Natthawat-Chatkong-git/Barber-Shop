@@ -5,6 +5,20 @@ const router = Router();
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ISO_WITH_TIMEZONE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/;
 
+router.get("/", requireAuth, async (req, res, next) => {
+  try {
+    const { data, error } = await req.supabase
+      .from("appointments")
+      .select("id, starts_at, ends_at, status, customer_note, barbers(display_name), appointment_services(service_name, unit_price, duration_minutes)")
+      .order("starts_at", { ascending: false })
+      .limit(50);
+    if (error) return next(error);
+    return res.json({ data });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post("/", requireAuth, async (req, res, next) => {
   try {
     const { serviceIds, startsAt, barberId = null, customerNote = null } = req.body ?? {};
