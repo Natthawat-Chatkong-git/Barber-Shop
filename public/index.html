@@ -61,7 +61,9 @@
           <h3>รายละเอียดการจอง</h3>
           <fieldset><legend>เลือกบริการ</legend><div id="booking-services" class="choice-list"></div></fieldset>
           <label>ช่างตัดผม<select id="barber-select"><option value="">ช่างที่ว่าง (ระบบเลือกให้อัตโนมัติ)</option></select></label>
-          <label>วันที่และเวลา (เวลาไทย)<input id="booking-time" type="datetime-local" required></label>
+          <label>วันที่ต้องการจอง (เวลาไทย)<input id="booking-date" type="date" required></label>
+          <label>เวลาที่ว่าง<select id="booking-slot" required disabled><option value="">เลือกบริการและวันที่ก่อน</option></select></label>
+          <p id="availability-state" class="notice" role="status"></p>
           <label>หมายเหตุ<textarea id="booking-note" rows="3" maxlength="500" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></textarea></label>
           <div class="booking-total"><span>ยอดรวมโดยประมาณ</span><strong id="booking-total">฿0</strong></div>
           <button class="button button-primary" type="submit">ยืนยันการจอง</button>
