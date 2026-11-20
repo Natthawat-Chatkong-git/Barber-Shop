@@ -111,6 +111,21 @@ async function loadAppointments() {
       const serviceNames = (item.appointment_services || []).map((service) => service.service_name).join(", ");
       const barber = item.barbers?.display_name || "ช่าง";
       card.innerHTML = `<div><strong>${escapeText(serviceNames || "รายการบริการ")}</strong><p class="muted">${date.toLocaleString("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "medium", timeStyle: "short" })} · ${escapeText(barber)}</p></div><span class="status status-${escapeText(item.status)}">${statusLabel(item.status)}</span>`;
+      if (["pending", "confirmed"].includes(item.status) && new Date(item.starts_at) > new Date()) {
+        const cancel = document.createElement("button");
+        cancel.type = "button"; cancel.className = "button button-quiet"; cancel.textContent = "ยกเลิกคิว";
+        cancel.addEventListener("click", async () => {
+          if (!window.confirm("ยืนยันการยกเลิกคิวนี้หรือไม่?")) return;
+          cancel.disabled = true;
+          try {
+            await api(`/api/appointments/${item.id}/cancel`, { method: "POST" });
+            showMessage("#appointments-state", "ยกเลิกคิวแล้ว");
+            await loadAppointments();
+          } catch (error) { showMessage("#appointments-state", error.message, true); }
+          finally { cancel.disabled = false; }
+        });
+        card.append(cancel);
+      }
       if (item.status === "completed") {
         if (reviewed.has(item.id)) {
           const reviewedLabel = document.createElement("p");
