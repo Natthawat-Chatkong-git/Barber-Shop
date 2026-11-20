@@ -30,6 +30,8 @@ jobs:
           else
             npm install --no-audit --no-fund
           fi
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
       - name: Commit initial lockfile
         if: github.event_name == 'push'
         run: |
