@@ -29,7 +29,7 @@ router.post("/:id/cancel", requireAuth, async (req, res, next) => {
       p_appointment_id: req.params.id
     });
     if (error) {
-      if (error.code === "22023") return res.status(409).json({ error: error.message });
+      if (error.code === "22023") return res.status(409).json({ error: "ไม่สามารถยกเลิกคิวนี้ได้ เนื่องจากสถานะหรือเวลาไม่อนุญาต" });
       return next(error);
     }
     return res.json({ data: { appointmentId: data } });
@@ -81,8 +81,9 @@ router.post("/", requireAuth, async (req, res, next) => {
     });
 
     if (error) {
-      const status = ["22023", "23P01"].includes(error.code) ? 409 : 400;
-      return res.status(status).json({ error: error.message });
+      if (error.code === "23P01") return res.status(409).json({ error: "ช่วงเวลานี้เพิ่งถูกจองไปแล้ว กรุณาเลือกเวลาอื่น" });
+      if (error.code === "22023") return res.status(409).json({ error: "ข้อมูลการจองไม่ถูกต้องหรือบริการไม่พร้อมใช้งาน" });
+      return next(error);
     }
 
     return res.status(201).json({
