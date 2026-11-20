@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/require-auth.js";
 import { requireAdmin } from "../middleware/require-admin.js";
-import { isValidUuid, isValidBusinessHours, canTransitionAppointment } from "../lib/validation.js";
+import { isValidUuid, isValidZonedTimestamp, isValidBusinessHours, canTransitionAppointment } from "../lib/validation.js";
 
 const router = Router();
 const APPOINTMENT_STATUSES = new Set(["pending", "confirmed", "in_progress", "completed", "cancelled", "no_show"]);
@@ -12,11 +12,40 @@ router.get("/appointments", async (req, res, next) => {
   try {
     const { data, error } = await req.supabase
       .from("appointments")
-      .select("id, starts_at, ends_at, status, customer_note, cancellation_reason, profiles!appointments_customer_id_fkey(full_name, phone), barbers(display_name), appointment_services(service_name, unit_price, duration_minutes)")
+      .select("id, starts_at, ends_at, status, customer_note, cancellation_reason, customer_name, customer_phone, source, profiles!appointments_customer_id_fkey(full_name, phone), barbers(display_name), appointment_services(service_name, unit_price, duration_minutes)")
       .order("starts_at", { ascending: false })
       .limit(200);
     if (error) return next(error);
     return res.json({ data });
+  } catch (error) { return next(error); }
+});
+
+router.post("/walk-ins", async (req, res, next) => {
+  try {
+    const { customerName, customerPhone = null, serviceIds, startsAt, barberId = null, customerNote = null } = req.body ?? {};
+    const phonePattern = /^[0-9+() -]{7,20}$/;
+    if (typeof customerName !== "string" || !customerName.trim() || customerName.length > 100 ||
+        (customerPhone !== null && (typeof customerPhone !== "string" || !phonePattern.test(customerPhone))) ||
+        !Array.isArray(serviceIds) || serviceIds.length < 1 || serviceIds.length > 10 ||
+        !serviceIds.every(isValidUuid) || !isValidZonedTimestamp(startsAt) ||
+        (barberId !== null && !isValidUuid(barberId)) ||
+        (customerNote !== null && (typeof customerNote !== "string" || customerNote.length > 500))) {
+      return res.status(400).json({ error: "Invalid walk-in booking details" });
+    }
+    const { data, error } = await req.supabase.rpc("create_walk_in_appointment", {
+      p_customer_name: customerName.trim(),
+      p_customer_phone: customerPhone,
+      p_service_ids: serviceIds,
+      p_starts_at: new Date(startsAt).toISOString(),
+      p_barber_id: barberId,
+      p_customer_note: customerNote
+    });
+    if (error) {
+      if (["22023", "23P01"].includes(error.code)) return res.status(409).json({ error: error.message });
+      if (error.code === "42501") return res.status(403).json({ error: "Administrator access required" });
+      return next(error);
+    }
+    return res.status(201).json({ data: { appointmentId: data } });
   } catch (error) { return next(error); }
 });
 
