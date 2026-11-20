@@ -82,7 +82,8 @@ The admin section is visible only to a signed-in profile whose database role is 
 - `GET /api/me` — signed-in user's profile
 - `GET /api/appointments` — signed-in user's bookings
 - `POST /api/appointments` — create a booking
-- `/api/admin/*` — role-protected appointment, service, and barber management
+- `/api/admin/*` — role-protected appointment, service, barber, and opening-hours management
+- `GET /api/reviews/mine` and `POST /api/reviews` — customer's own reviews and review submission
 
 Booking request example:
 
@@ -127,7 +128,7 @@ Never let a public signup request set `profiles.role`. The application does not 
 - The project uses Row Level Security. Keep RLS enabled.
 - The server uses the publishable key and forwards each signed-in user's access token so database RLS remains in effect.
 - Never expose a Supabase secret/service-role key in browser code or commit credentials.
-- The public booking RPC is a `SECURITY INVOKER` wrapper executable by `authenticated` only. It delegates the validated multi-table booking transaction to `private.create_appointment`, a non-exposed `SECURITY DEFINER` function that requires `auth.uid()`. Anonymous and PUBLIC execution are revoked. The Supabase Security Advisor returned no security lints after this change.
+- The public booking and barber-provisioning RPCs are `SECURITY INVOKER` wrappers executable by `authenticated` only. They delegate privileged transactions to functions in the non-exposed `private` schema, which validate `auth.uid()` and admin permissions. Anonymous and PUBLIC execution are revoked. The Supabase Security Advisor returned no security lints after these changes.
 - Admin appointment status updates are restricted by an RLS policy using `private.is_admin()`.
 - Use HTTPS in production.
 - The default rate-limit store is in-memory. Configure a shared store before running multiple application instances.
@@ -158,7 +159,7 @@ GitHub Actions runs the Node.js 26 unit test suite and JavaScript syntax checks 
 
 ## Current implementation status
 
-Implemented: database schema and RLS, hardened booking RPC, customer authentication UI, service catalogue, barber selection, booking creation/history, protected admin APIs, admin service/barber management, opening-hours management, appointment status workflow, unit tests, CI workflow, and Docker image.
+Implemented: database schema and RLS, hardened booking RPC, customer authentication UI, service catalogue, barber selection, booking creation/history, customer reviews, protected admin APIs, admin service/barber provisioning, opening-hours management, appointment status workflow, unit tests, CI workflow, and Docker image.
 
 Not yet implemented: payment processing, customer self-service cancellation/rescheduling, customer reviews UI, advanced availability calendar/slot preview, end-to-end browser/API tests, committed npm lockfile, SMTP setup, and production deployment.
 
