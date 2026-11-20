@@ -159,7 +159,7 @@ In Supabase Dashboard → Authentication → URL Configuration:
 
 ## CI
 
-GitHub Actions runs the Node.js 26 unit test suite and JavaScript syntax checks on pushes and pull requests to `main`.
+GitHub Actions runs the Node.js 26 unit test suite, JavaScript syntax checks, and production Docker build on pushes and pull requests to `main`. It bootstraps and commits the initial `package-lock.json` so future installs are reproducible.
 
 ## Current implementation status
 
@@ -167,4 +167,4 @@ Implemented: database schema and RLS, hardened online and walk-in booking RPCs, 
 
 Not yet implemented: payment processing, customer self-service rescheduling, end-to-end browser/API tests, committed npm lockfile, SMTP setup, and production deployment.
 
-Before production use, install dependencies, run the application locally, configure Supabase Auth redirect URLs and email delivery, and complete browser/API tests with real customer and administrator accounts.
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for the production environment, container run command, and acceptance checklist. Do not expose the app publicly until the Admin and barber accounts exist and all acceptance tests pass.
