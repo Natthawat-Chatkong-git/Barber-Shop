@@ -11,6 +11,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.resolve(currentDir, "../public");
 
 app.disable("x-powered-by");
+app.set("trust proxy", env.trustProxyHops);
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
