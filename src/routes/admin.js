@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/require-auth.js";
 import { requireAdmin } from "../middleware/require-admin.js";
+import { isValidUuid, isValidBusinessHours, canTransitionAppointment } from "../lib/validation.js";
 
 const router = Router();
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const APPOINTMENT_STATUSES = new Set(["pending", "confirmed", "in_progress", "completed", "cancelled", "no_show"]);
 
 router.use(requireAuth, requireAdmin);
@@ -24,21 +24,13 @@ router.patch("/appointments/:id/status", async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status, cancellationReason = null } = req.body ?? {};
-    if (!UUID_PATTERN.test(id) || !APPOINTMENT_STATUSES.has(status)) {
+    if (!isValidUuid(id) || !APPOINTMENT_STATUSES.has(status)) {
       return res.status(400).json({ error: "Invalid appointment ID or status" });
     }
     const { data: current, error: currentError } = await req.supabase
       .from("appointments").select("status").eq("id", id).single();
     if (currentError) return next(currentError);
-    const transitions = {
-      pending: new Set(["confirmed", "cancelled"]),
-      confirmed: new Set(["in_progress", "cancelled", "no_show"]),
-      in_progress: new Set(["completed"]),
-      completed: new Set(),
-      cancelled: new Set(),
-      no_show: new Set()
-    };
-    if (current.status !== status && !transitions[current.status]?.has(status)) {
+    if (!canTransitionAppointment(current.status, status)) {
       return res.status(409).json({ error: `Cannot change appointment from ${current.status} to ${status}` });
     }
     if (cancellationReason !== null && (typeof cancellationReason !== "string" || cancellationReason.length > 500)) {
@@ -49,6 +41,7 @@ router.patch("/appointments/:id/status", async (req, res, next) => {
       .from("appointments")
       .update(update)
       .eq("id", id)
+      .eq("status", current.status)
       .select("id, status, cancellation_reason")
       .single();
     if (error) return next(error);
@@ -88,7 +81,7 @@ router.patch("/services/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, description, durationMinutes, price, isActive } = req.body ?? {};
-    if (!UUID_PATTERN.test(id)) return res.status(400).json({ error: "Invalid service ID" });
+    if (!isValidUuid(id)) return res.status(400).json({ error: "Invalid service ID" });
     const update = {};
     if (name !== undefined) {
       if (typeof name !== "string" || !name.trim() || name.length > 100) return res.status(400).json({ error: "Invalid service name" });
@@ -141,7 +134,7 @@ router.get("/barber-candidates", async (req, res, next) => {
 router.post("/barbers", async (req, res, next) => {
   try {
     const { profileId, displayName, bio = null, experienceYears = 0 } = req.body ?? {};
-    if (!UUID_PATTERN.test(profileId || "") || typeof displayName !== "string" ||
+    if (!isValidUuid(profileId) || typeof displayName !== "string" ||
         !displayName.trim() || displayName.length > 100 ||
         (bio !== null && (typeof bio !== "string" || bio.length > 1000)) ||
         !Number.isInteger(experienceYears) || experienceYears < 0 || experienceYears > 80) {
@@ -161,7 +154,7 @@ router.patch("/barbers/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
     const { isActive } = req.body ?? {};
-    if (!UUID_PATTERN.test(id) || typeof isActive !== "boolean") {
+    if (!isValidUuid(id) || typeof isActive !== "boolean") {
       return res.status(400).json({ error: "Invalid barber ID or active state" });
     }
     const { data, error } = await req.supabase.from("barbers").update({ is_active: isActive }).eq("id", id).select().single();
