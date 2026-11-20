@@ -53,14 +53,21 @@ app.use((req, res) => {
   return res.status(404).send("Page not found");
 });
 
-app.use((error, _req, res, _next) => {
+app.use((error, _req, res, next) => {
   // Keep diagnostic details in server logs, not in public responses.
   console.error(error);
-  if (res.headersSent) return;
+  if (res.headersSent) return next(error);
 
-  return res.status(500).json({
-    error: "Internal server error"
-  });
+  const status = Number.isInteger(error.status) && error.status >= 400 && error.status < 500
+    ? error.status
+    : 500;
+  const message = status === 413
+    ? "Request body is too large"
+    : status === 400
+      ? "Invalid request body"
+      : "Internal server error";
+
+  return res.status(status).json({ error: message });
 });
 
 export default app;
