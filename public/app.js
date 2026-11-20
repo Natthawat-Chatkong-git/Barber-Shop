@@ -323,7 +323,19 @@ function renderAdminAppointments(rows) {
     info.append(title, detail);
     const controls = document.createElement("div"); controls.className = "admin-controls";
     const select = document.createElement("select");
-    ["pending","confirmed","in_progress","completed","cancelled","no_show"].forEach((status) => select.add(new Option(statusLabel(status), status)));
+    const allowedStatuses = {
+      pending: ["pending", "confirmed", "cancelled"],
+      confirmed: ["confirmed", "in_progress", "cancelled", "no_show"],
+      in_progress: ["in_progress", "completed"],
+      completed: ["completed"],
+      cancelled: ["cancelled"],
+      no_show: ["no_show"]
+    };
+    ["pending","confirmed","in_progress","completed","cancelled","no_show"].forEach((status) => {
+      const option = new Option(statusLabel(status), status);
+      option.disabled = !allowedStatuses[item.status]?.includes(status);
+      select.add(option);
+    });
     select.value = item.status;
     const save = document.createElement("button"); save.className = "button button-quiet"; save.type = "button"; save.textContent = "บันทึก";
     save.addEventListener("click", async () => {
