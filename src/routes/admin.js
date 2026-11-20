@@ -127,7 +127,7 @@ router.get("/barber-candidates", async (req, res, next) => {
     if (profileError) return next(profileError);
     if (barberError) return next(barberError);
     const assigned = new Set((barbers || []).map((barber) => barber.profile_id));
-    return res.json({ data: (profiles || []).filter((profile) => !assigned.has(profile.id)) });
+    return res.json({ data: (profiles || []).filter((profile) => !assigned.has(profile.id) && profile.role !== "admin") });
   } catch (error) { return next(error); }
 });
 
@@ -140,13 +140,18 @@ router.post("/barbers", async (req, res, next) => {
         !Number.isInteger(experienceYears) || experienceYears < 0 || experienceYears > 80) {
       return res.status(400).json({ error: "Invalid barber profile details" });
     }
-    const { data, error } = await req.supabase.from("barbers").insert({
-      profile_id: profileId, display_name: displayName.trim(),
-      bio: typeof bio === "string" ? bio.trim() || null : null,
-      experience_years: experienceYears, is_active: true
-    }).select().single();
-    if (error) return next(error);
-    return res.status(201).json({ data });
+    const { data, error } = await req.supabase.rpc("create_barber", {
+      p_profile_id: profileId,
+      p_display_name: displayName.trim(),
+      p_bio: typeof bio === "string" ? bio.trim() || null : null,
+      p_experience_years: experienceYears
+    });
+    if (error) {
+      if (error.code === "23505") return res.status(409).json({ error: "This profile is already assigned to a barber" });
+      if (error.code === "42501") return res.status(403).json({ error: "Administrator access required" });
+      return next(error);
+    }
+    return res.status(201).json({ data: { id: data } });
   } catch (error) { return next(error); }
 });
 
