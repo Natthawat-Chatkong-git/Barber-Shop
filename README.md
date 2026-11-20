@@ -59,7 +59,7 @@
 - Choose one or more services, an optional barber, and a date/time in Asia/Bangkok.
 - Create a booking and view the signed-in customer's booking history.
 
-The database booking function validates that the appointment is in the future, within configured business hours, uses active services, and does not overlap an active booking for the selected barber. When no barber is selected, the database chooses an available active barber.
+The database booking function validates that the appointment is in the future, within configured business hours, uses active services, and does not overlap an active booking for the selected barber. When no barber is selected, the database chooses an available active barber. At least one active barber profile must exist before a booking can succeed; the current project has no barber profiles yet.
 
 ## Admin features
 
