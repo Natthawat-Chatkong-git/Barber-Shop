@@ -1,12 +1,12 @@
 # Barber-Shop
 
-ระบบจัดการร้านตัดผมและจองคิว
+ระบบจัดการร้านตัดผมและจองคิวออนไลน์ รองรับลูกค้าและผู้ดูแลร้าน
 
 ## Technology stack
 
-- Frontend: HTML, CSS, Vanilla JavaScript
-- Backend: Node.js 26 LTS, Express 5
-- Database and Auth: Supabase (PostgreSQL)
+- Frontend: HTML, CSS, Vanilla JavaScript (Supabase JS client)
+- Backend: Node.js 26+, Express 5
+- Database and Authentication: Supabase PostgreSQL + Supabase Auth
 - Primary language: JavaScript (ES modules)
 
 ## Supabase project
@@ -17,7 +17,7 @@
 
 ## Requirements
 
-- Node.js 26 LTS
+- Node.js 26+
 - npm
 - Access to the Barber-Shop Supabase project
 
@@ -51,11 +51,36 @@
 
 6. Open http://localhost:3000.
 
+## Customer features
+
+- View active services and prices.
+- Register and sign in with email/password using Supabase Auth.
+- Email confirmation is required when enabled in Supabase Auth settings.
+- Choose one or more services, an optional barber, and a date/time in Asia/Bangkok.
+- Create a booking and view the signed-in customer's booking history.
+
+The database booking function validates that the appointment is in the future, within configured business hours, uses active services, and does not overlap an active booking for the selected barber. When no barber is selected, the database chooses an available active barber.
+
+## Admin features
+
+The admin section is visible only to a signed-in profile whose database role is `admin`.
+
+- View recent appointments and update their status.
+- Add services and activate/deactivate existing services.
+- Activate/deactivate barber profiles.
+- Protected admin endpoints enforce the role on the server and rely on database RLS policies.
+
 ## API routes
 
 - `GET /api/health` — application health check
+- `GET /api/config` — public Supabase URL and publishable key only
 - `GET /api/services` — active services
-- `POST /api/appointments` — create a booking (requires a Supabase access token)
+- `GET /api/barbers` — active barbers
+- `GET /api/business-hours` — public opening hours
+- `GET /api/me` — signed-in user's profile
+- `GET /api/appointments` — signed-in user's bookings
+- `POST /api/appointments` — create a booking
+- `/api/admin/*` — role-protected appointment, service, and barber management
 
 Booking request example:
 
@@ -68,23 +93,18 @@ Booking request example:
 }
 ```
 
-Set `barberId` to a barber UUID to select a barber, or `null` to let the database choose an available barber. The database function validates opening hours in Asia/Bangkok and prevents overlapping active bookings.
-
 For protected routes, send:
 
 ```
 Authorization: Bearer <SUPABASE_ACCESS_TOKEN>
 ```
 
-## Supabase Data API
-
-The project database uses Row Level Security. Ensure the required tables and the `create_appointment` function are exposed in Supabase **Integrations → Data API** before using the REST-backed client routes. Do not disable RLS to make an API request work.
-
 ## First administrator
 
-1. Create the first user in Supabase Dashboard → Authentication → Users.
-2. Confirm that the Auth user has a corresponding row in `public.profiles` (created by the database trigger).
-3. In the Supabase SQL Editor, promote only that verified user:
+1. Register a user through the website or create one in Supabase Dashboard → Authentication → Users.
+2. If email confirmation is enabled, confirm the email before signing in.
+3. Confirm that the Auth user has a corresponding row in `public.profiles` (created by the database trigger).
+4. In the Supabase SQL Editor, promote only that verified user:
 
    ```sql
    update public.profiles
@@ -96,18 +116,24 @@ The project database uses Row Level Security. Ensure the required tables and the
    );
    ```
 
-4. Confirm that exactly one intended profile was updated.
+5. Confirm that exactly one intended profile was updated, then sign out and sign back in to refresh the profile state.
 
-Never let a public signup request set `profiles.role`. The application must not expose a route that lets users promote themselves.
+Never let a public signup request set `profiles.role`. The application does not expose a self-promotion endpoint.
 
-## Security notes
+## Supabase Data API and security
 
-- Never commit `.env`, passwords, Supabase secret keys, or service-role keys.
-- The server uses the Supabase publishable key and forwards each signed-in user's access token so database RLS remains in effect.
-- Never use a service-role key in browser code.
+- The project uses Row Level Security. Keep RLS enabled.
+- The server uses the publishable key and forwards each signed-in user's access token so database RLS remains in effect.
+- Never expose a Supabase secret/service-role key in browser code or commit credentials.
+- The booking RPC is executable by `authenticated` only; anonymous and PUBLIC execution were revoked. It remains `SECURITY DEFINER` because it performs the validated multi-table booking transaction, and its body requires `auth.uid()`.
+- Admin appointment status updates are restricted by an RLS policy using `private.is_admin()`.
 - Use HTTPS in production.
 - The default rate-limit store is in-memory. Configure a shared store before running multiple application instances.
 
-## Current status
+## Current implementation status
 
-The Supabase database schema, RLS policies, booking RPC, shop hours, and active service catalogue have been configured. This repository contains the initial application scaffold. Authentication UI, admin screens, barber management, payment integration, and end-to-end tests are not implemented yet.
+Implemented: database schema and RLS, booking RPC, customer authentication UI, service catalogue, barber selection, booking creation/history, protected admin APIs and basic admin UI.
+
+Not yet implemented: payment processing, cancellation/rescheduling workflows for customers, barber account onboarding, advanced availability calendar/slot preview, automated end-to-end tests, and production deployment.
+
+Before production use, install dependencies, run the application locally, configure Supabase Auth redirect URLs and email delivery, and complete browser/API tests with real customer and administrator accounts.
