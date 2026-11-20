@@ -11,7 +11,23 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.resolve(currentDir, "../public");
 
 app.disable("x-powered-by");
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      "default-src": ["'self'"],
+      "base-uri": ["'self'"],
+      "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
+      "form-action": ["'self'"],
+      "frame-ancestors": ["'none'"],
+      "img-src": ["'self'", "data:", "https:"],
+      "object-src": ["'none'"],
+      "script-src": ["'self'", "https://esm.sh"],
+      "script-src-attr": ["'none'"],
+      "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      "connect-src": ["'self'", "https://*.supabase.co", "https://esm.sh"]
+    }
+  }
+}));
 app.use(express.json({ limit: "20kb" }));
 
 const apiLimiter = rateLimit({
