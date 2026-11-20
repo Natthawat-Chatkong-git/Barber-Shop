@@ -76,7 +76,21 @@
       <div id="appointments-list" class="appointment-list"></div>
     </section>
 
-    <section id="admin-panel" class="section hidden">\n      <p class="eyebrow">ADMINISTRATION</p><h2>จัดการร้าน</h2>\n      <div class="admin-grid">\n        <div class="panel"><h3>เพิ่มบริการ</h3><form id="admin-service-form" class="form">\n          <label>ชื่อบริการ<input id="new-service-name" required maxlength="100"></label>\n          <label>รายละเอียด<input id="new-service-description" maxlength="300"></label>\n          <div class="form-row"><label>ระยะเวลา (นาที)<input id="new-service-duration" type="number" min="1" max="600" value="30" required></label><label>ราคา (บาท)<input id="new-service-price" type="number" min="0" step="1" required></label></div>\n          <button class="button button-primary" type="submit">เพิ่มบริการ</button><p id="admin-service-message" class="notice" role="status"></p>\n        </form><div id="admin-services" class="admin-list"></div></div>\n        <div class="panel"><h3>จัดการช่าง</h3><p class="muted">เปิดหรือปิดการรับจองของช่าง</p><div id="admin-barbers" class="admin-list"></div></div>\n      </div>\n      <div class="panel admin-appointments"><div class="section-heading"><h3>จัดการคิวจอง</h3><button id="admin-refresh" class="button button-quiet" type="button">รีเฟรช</button></div><p id="admin-appointments-message" class="notice" role="status"></p><div id="admin-appointments" class="admin-list"></div></div>\n    </section>\n\n    <section class="section hours">
+    <section id="admin-panel" class="section hidden">
+      <p class="eyebrow">ADMINISTRATION</p><h2>จัดการร้าน</h2>
+      <div class="admin-grid">
+        <div class="panel"><h3>เพิ่มบริการ</h3><form id="admin-service-form" class="form">
+          <label>ชื่อบริการ<input id="new-service-name" required maxlength="100"></label>
+          <label>รายละเอียด<input id="new-service-description" maxlength="300"></label>
+          <div class="form-row"><label>ระยะเวลา (นาที)<input id="new-service-duration" type="number" min="1" max="600" value="30" required></label><label>ราคา (บาท)<input id="new-service-price" type="number" min="0" step="1" required></label></div>
+          <button class="button button-primary" type="submit">เพิ่มบริการ</button><p id="admin-service-message" class="notice" role="status"></p>
+        </form><div id="admin-services" class="admin-list"></div></div>
+        <div class="panel"><h3>จัดการช่าง</h3><p class="muted">เปิดหรือปิดการรับจองของช่าง</p><div id="admin-barbers" class="admin-list"></div></div>
+      </div>
+      <div class="panel admin-appointments"><div class="section-heading"><h3>จัดการคิวจอง</h3><button id="admin-refresh" class="button button-quiet" type="button">รีเฟรช</button></div><p id="admin-appointments-message" class="notice" role="status"></p><div id="admin-appointments" class="admin-list"></div></div>
+    </section>
+
+    <section class="section hours">
       <div><p class="eyebrow">OPENING HOURS</p><h2>เวลาเปิดให้บริการ</h2></div>
       <p>วันจันทร์–ศุกร์ <strong>10:00–20:00 น.</strong><br><span class="muted">วันเสาร์–อาทิตย์ปิดทำการ</span></p>
     </section>
