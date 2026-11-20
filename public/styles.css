@@ -61,3 +61,13 @@ fieldset{border:0;padding:0;margin:0}legend{margin-bottom:10px}
 .hidden{display:none!important}
 @media(max-width:760px){.hero{min-height:390px;padding:80px 0 60px}.booking-layout{grid-template-columns:1fr;gap:28px}.hours{align-items:flex-start;flex-direction:column}.container{width:min(100% - 32px,1120px)}.section{padding:42px 0}}
 @media(max-width:460px){.topbar{padding:0 16px}.account{gap:8px}.account .muted{font-size:.75rem}.panel{padding:20px}.appointment-card{align-items:flex-start;flex-direction:column}.footer{padding:24px 16px}}
+
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:24px 0}
+.admin-appointments{margin-top:18px}
+.admin-list{display:grid;gap:10px;margin-top:18px}
+.admin-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0;border-top:1px solid #ffffff18}
+.admin-row p{margin:5px 0 0;font-size:.85rem}
+.admin-controls{display:flex;align-items:center;gap:8px}
+.admin-controls select{min-width:145px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.admin-grid{grid-template-columns:1fr}.admin-row{align-items:flex-start;flex-direction:column}.admin-controls{width:100%}.admin-controls select{flex:1}}
