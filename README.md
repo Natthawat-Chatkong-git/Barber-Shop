@@ -57,7 +57,7 @@
 - Register and sign in with email/password using Supabase Auth.
 - Email confirmation is required when enabled in Supabase Auth settings.
 - Choose one or more services, an optional barber, a date, and a live available 15-minute start slot in Asia/Bangkok.
-- Create a booking, view booking history, cancel pending/confirmed future bookings, and review completed appointments.
+- Create online bookings, view booking history, cancel pending/confirmed future bookings, and review completed appointments.
 
 The database booking function validates that the appointment is in the future, within configured business hours, uses active services, and does not overlap an active booking for the selected barber. When no barber is selected, the database chooses an available active barber. At least one active barber profile must exist before a booking can succeed; the current project has no barber profiles yet.
 
@@ -65,7 +65,8 @@ The database booking function validates that the appointment is in the future, w
 
 The admin section is visible only to a signed-in profile whose database role is `admin`.
 
-- View recent appointments and update their status.
+- View recent online and walk-in appointments and update their status.
+- Record walk-in bookings for guests using their name and optional phone number.
 - Add services and activate/deactivate existing services.
 - Create barber records linked to existing user profiles, and activate/deactivate barber profiles.
 - Configure opening and closing times for each weekday.
@@ -84,6 +85,7 @@ The admin section is visible only to a signed-in profile whose database role is 
 - `GET /api/availability?date=YYYY-MM-DD&serviceIds=UUID,UUID&barberId=UUID` — authenticated available slots
 - `POST /api/appointments` — create a booking
 - `POST /api/appointments/:id/cancel` — cancel the signed-in customer's eligible future booking
+- `POST /api/admin/walk-ins` — create a guest walk-in booking
 - `/api/admin/*` — role-protected appointment, service, barber, and opening-hours management
 - `GET /api/reviews/mine` and `POST /api/reviews` — customer's own reviews and review submission
 
@@ -161,7 +163,7 @@ GitHub Actions runs the Node.js 26 unit test suite and JavaScript syntax checks 
 
 ## Current implementation status
 
-Implemented: database schema and RLS, hardened booking RPC, customer authentication UI, service catalogue, barber selection, booking creation/history, customer reviews, protected admin APIs, admin service/barber provisioning, opening-hours management, appointment status workflow, unit tests, CI workflow, and Docker image.
+Implemented: database schema and RLS, hardened online and walk-in booking RPCs, live availability slots, customer authentication UI, service catalogue, barber selection, booking history/cancellation/reviews, protected admin APIs, admin service/barber provisioning, walk-in guest booking, opening-hours management, appointment status workflow, unit tests, CI workflow, and Docker image.
 
 Not yet implemented: payment processing, customer self-service rescheduling, end-to-end browser/API tests, committed npm lockfile, SMTP setup, and production deployment.
 
