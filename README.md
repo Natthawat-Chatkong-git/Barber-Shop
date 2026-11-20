@@ -27,7 +27,7 @@
 2. Install dependencies:
 
    ```bash
-   npm install
+   npm ci
    ```
 
 3. Copy the environment template:
