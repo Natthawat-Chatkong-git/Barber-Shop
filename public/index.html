@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Barber-Shop — ระบบบริการและจองคิวร้านตัดผม">
+  <title>Barber-Shop</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main class="container">
+    <header class="hero">
+      <p class="eyebrow">BARBER-SHOP</p>
+      <h1>บริการของเรา</h1>
+      <p class="muted">เลือกบริการที่ต้องการ แล้วติดต่อร้านเพื่อจองคิว</p>
+    </header>
+
+    <section aria-labelledby="services-heading">
+      <div class="section-heading">
+        <h2 id="services-heading">รายการบริการ</h2>
+        <span id="service-count" class="muted"></span>
+      </div>
+      <p id="service-state" class="notice" role="status">กำลังโหลดบริการ...</p>
+      <div id="service-list" class="service-grid"></div>
+    </section>
+
+    <footer class="footer">
+      <p>เปิดให้บริการวันจันทร์–ศุกร์ เวลา 10:00–20:00 น.</p>
+    </footer>
+  </main>
+</body>
+</html>
