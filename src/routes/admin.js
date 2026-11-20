@@ -77,7 +77,10 @@ router.patch("/appointments/:id/status", async (req, res, next) => {
       .eq("status", current.status)
       .select("id, status, cancellation_reason")
       .single();
-    if (error) return next(error);
+    if (error) {
+      if (error.code === "PGRST116") return res.status(404).json({ error: "Barber not found" });
+      return next(error);
+    }
     return res.json({ data });
   } catch (error) { return next(error); }
 });
