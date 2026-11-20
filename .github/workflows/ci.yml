@@ -48,3 +48,19 @@ jobs:
         run: find src public test -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Build production container
         run: docker build -t barber-shop:ci .
+      - name: Smoke-test production container
+        run: |
+          docker run -d --name barber-shop-smoke -p 3000:3000 \
+            -e NODE_ENV=production \
+            -e SUPABASE_URL=https://example.supabase.co \
+            -e SUPABASE_PUBLISHABLE_KEY=sb_publishable_ci_dummy \
+            barber-shop:ci
+          trap 'docker rm -f barber-shop-smoke >/dev/null 2>&1 || true' EXIT
+          for attempt in $(seq 1 15); do
+            if curl --fail --silent http://127.0.0.1:3000/api/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs barber-shop-smoke
+          exit 1
