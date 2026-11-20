@@ -1,5 +1,5 @@
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-export const ISO_WITH_TIMEZONE = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d{1,3})?)?(Z|[+-]\\d{2}:\\d{2})$/;
+export const ISO_WITH_TIMEZONE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/;
 
 const transitions = Object.freeze({
   pending: new Set(["confirmed", "cancelled"]),
@@ -36,7 +36,7 @@ export function canTransitionAppointment(from, to) {
 }
 
 export function isValidBusinessHours(opensAt, closesAt) {
-  const pattern = /^([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d)?$/;
+  const pattern = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
   return typeof opensAt === "string" && typeof closesAt === "string" &&
     pattern.test(opensAt) && pattern.test(closesAt) && opensAt < closesAt;
 }
