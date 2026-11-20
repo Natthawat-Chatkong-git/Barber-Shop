@@ -15,7 +15,20 @@ export function isValidUuid(value) {
 }
 
 export function isValidZonedTimestamp(value) {
-  return typeof value === "string" && ISO_WITH_TIMEZONE.test(value) && !Number.isNaN(Date.parse(value));
+  if (typeof value !== "string" || !ISO_WITH_TIMEZONE.test(value) || Number.isNaN(Date.parse(value))) {
+    return false;
+  }
+
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  const [hour, minute, second = 0] = value.slice(11, 19).split(":").map(Number);
+  const calendar = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+
+  return calendar.getUTCFullYear() === year &&
+    calendar.getUTCMonth() === month - 1 &&
+    calendar.getUTCDate() === day &&
+    calendar.getUTCHours() === hour &&
+    calendar.getUTCMinutes() === minute &&
+    calendar.getUTCSeconds() === second;
 }
 
 export function canTransitionAppointment(from, to) {
