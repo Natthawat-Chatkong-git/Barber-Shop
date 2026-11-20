@@ -415,6 +415,87 @@ function renderAdminHours(rows) {
   });
 }
 
+function renderWalkInOptions(services, barbers) {
+  const serviceSelect = $("#walkin-services");
+  const selectedServices = new Set([...serviceSelect.selectedOptions].map((option) => option.value));
+  serviceSelect.replaceChildren();
+  services.filter((service) => service.is_active).forEach((service) => {
+    const option = new Option(service.name + " · " + money(service.price) + " · " + service.duration_minutes + " นาที", service.id);
+    option.selected = selectedServices.has(service.id);
+    serviceSelect.add(option);
+  });
+
+  const barberSelect = $("#walkin-barber");
+  const selectedBarber = barberSelect.value;
+  barberSelect.replaceChildren(new Option("ระบบเลือกช่างให้อัตโนมัติ", ""));
+  barbers.filter((barber) => barber.is_active).forEach((barber) => barberSelect.add(new Option(barber.display_name, barber.id)));
+  if (barbers.some((barber) => barber.id === selectedBarber && barber.is_active)) barberSelect.value = selectedBarber;
+}
+
+async function loadWalkInAvailability() {
+  const requestId = ++state.availabilityRequest;
+  const date = $("#walkin-date").value;
+  const serviceIds = [...$("#walkin-services").selectedOptions].map((option) => option.value);
+  const select = $("#walkin-slot");
+  select.replaceChildren(new Option("กำลังตรวจสอบเวลาว่าง...", ""));
+  select.disabled = true;
+  if (!date || !serviceIds.length) {
+    select.replaceChildren(new Option("เลือกบริการและวันที่ก่อน", ""));
+    return;
+  }
+  try {
+    const params = new URLSearchParams({ date, serviceIds: serviceIds.join(",") });
+    const barberId = $("#walkin-barber").value;
+    if (barberId) params.set("barberId", barberId);
+    const result = await api("/api/availability?" + params.toString());
+    if (requestId !== state.availabilityRequest) return;
+    const slots = result.data || [];
+    select.replaceChildren(new Option(slots.length ? "เลือกเวลา" : "ไม่มีเวลาว่าง", ""));
+    slots.forEach((slot) => {
+      const time = new Date(slot).toLocaleTimeString("th-TH", {
+        timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit"
+      });
+      select.add(new Option(time, slot));
+    });
+    select.disabled = slots.length === 0;
+  } catch (error) {
+    if (requestId !== state.availabilityRequest) return;
+    select.replaceChildren(new Option("โหลดเวลาว่างไม่สำเร็จ", ""));
+    showMessage("#admin-walkin-message", error.message, true);
+  }
+}
+
+async function handleAdminWalkIn(event) {
+  event.preventDefault();
+  const serviceIds = [...$("#walkin-services").selectedOptions].map((option) => option.value);
+  const startsAt = $("#walkin-slot").value;
+  if (!serviceIds.length || !startsAt) return showMessage("#admin-walkin-message", "กรุณาเลือกบริการและเวลาที่ว่าง", true);
+  const button = event.submitter;
+  button.disabled = true;
+  try {
+    await api("/api/admin/walk-ins", {
+      method: "POST",
+      body: JSON.stringify({
+        customerName: $("#walkin-name").value.trim(),
+        customerPhone: $("#walkin-phone").value.trim() || null,
+        serviceIds,
+        startsAt,
+        barberId: $("#walkin-barber").value || null,
+        customerNote: $("#walkin-note").value.trim() || null
+      })
+    });
+    showMessage("#admin-walkin-message", "บันทึกคิว Walk-in สำเร็จ");
+    $("#admin-walkin-form").reset();
+    $("#walkin-date").value = getNextOpenDate();
+    await loadAdminDashboard();
+    await loadWalkInAvailability();
+  } catch (error) {
+    showMessage("#admin-walkin-message", error.message, true);
+  } finally {
+    button.disabled = false;
+  }
+}
+
 async function handleAdminBarberCreate(event) {
   event.preventDefault();
   const button = event.submitter; button.disabled = true;
