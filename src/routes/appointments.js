@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/require-auth.js";
+import { isValidUuid, isValidZonedTimestamp } from "../lib/validation.js";
 
 const router = Router();
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -27,7 +28,7 @@ router.post("/", requireAuth, async (req, res, next) => {
       !Array.isArray(serviceIds) ||
       serviceIds.length === 0 ||
       serviceIds.length > 10 ||
-      !serviceIds.every((id) => typeof id === "string" && UUID_PATTERN.test(id))
+      !serviceIds.every(isValidUuid)
     ) {
       return res.status(400).json({
         error: "serviceIds must be an array of 1 to 10 valid UUIDs"
@@ -35,16 +36,14 @@ router.post("/", requireAuth, async (req, res, next) => {
     }
 
     if (
-      typeof startsAt !== "string" ||
-      !ISO_WITH_TIMEZONE.test(startsAt) ||
-      Number.isNaN(Date.parse(startsAt))
+      !isValidZonedTimestamp(startsAt)
     ) {
       return res.status(400).json({
         error: "startsAt must be an ISO-8601 timestamp with an explicit timezone"
       });
     }
 
-    if (barberId !== null && (typeof barberId !== "string" || !UUID_PATTERN.test(barberId))) {
+    if (barberId !== null && !isValidUuid(barberId)) {
       return res.status(400).json({
         error: "barberId must be a valid UUID or null"
       });
