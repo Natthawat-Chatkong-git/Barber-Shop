@@ -297,6 +297,7 @@ async function loadAdminDashboard() {
     renderAdminAppointments(appointments.data || []);
     renderAdminServices(services.data || []);
     renderAdminBarbers(barbers.data || []);
+    renderWalkInOptions(services.data || [], barbers.data || []);
     renderBarberCandidates(candidates.data || []);
     renderAdminHours(hours.data || []);
     showMessage("#admin-appointments-message", "");
@@ -315,10 +316,10 @@ function renderAdminAppointments(rows) {
     const card = document.createElement("article"); card.className = "admin-row";
     const info = document.createElement("div");
     const title = document.createElement("strong");
-    title.textContent = item.profiles?.full_name || "ลูกค้า";
+    title.textContent = item.profiles?.full_name || item.customer_name || "ลูกค้า";
     const detail = document.createElement("p"); detail.className = "muted";
     const when = new Date(item.starts_at).toLocaleString("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "medium", timeStyle: "short" });
-    detail.textContent = `${when} · ${(item.appointment_services || []).map((s) => s.service_name).join(", ")} · ${item.barbers?.display_name || "ช่าง"}`;
+    detail.textContent = `${when} · ${(item.appointment_services || []).map((s) => s.service_name).join(", ")} · ${item.barbers?.display_name || "ช่าง"} · ${item.source === "walk_in" ? "Walk-in" : "Online"}${item.customer_phone ? " · " + item.customer_phone : ""}`;
     info.append(title, detail);
     const controls = document.createElement("div"); controls.className = "admin-controls";
     const select = document.createElement("select");
@@ -461,6 +462,12 @@ async function init() {
   $("#admin-refresh").addEventListener("click", loadAdminDashboard);
   $("#admin-service-form").addEventListener("submit", handleAdminServiceCreate);
   $("#admin-barber-form").addEventListener("submit", handleAdminBarberCreate);
+  $("#admin-walkin-form").addEventListener("submit", handleAdminWalkIn);
+  $("#walkin-date").min = getNextOpenDate();
+  $("#walkin-date").value = getNextOpenDate();
+  $("#walkin-date").addEventListener("change", loadWalkInAvailability);
+  $("#walkin-services").addEventListener("change", loadWalkInAvailability);
+  $("#walkin-barber").addEventListener("change", loadWalkInAvailability);
   $("#signout-button").addEventListener("click", async () => {
     await state.supabase.auth.signOut();
     window.location.reload();
