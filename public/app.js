@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.119.2";
 
 const $ = (selector) => document.querySelector(selector);
-const state = { supabase: null, services: [], barbers: [], profile: null, reviews: [], authMode: "login" };
+const state = { supabase: null, services: [], barbers: [], profile: null, reviews: [], availabilityRequest: 0, authMode: "login" };
 const money = (value) => new Intl.NumberFormat("th-TH", { style: "currency", currency: "THB", maximumFractionDigits: 0 }).format(Number(value));
 const escapeText = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 
@@ -208,12 +208,16 @@ function getNextOpenDate() {
   }).formatToParts(new Date());
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   const date = new Date(Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day)));
-  if (date.getUTCDay() === 6) date.setUTCDate(date.getUTCDate() + 2);
-  if (date.getUTCDay() === 0) date.setUTCDate(date.getUTCDate() + 1);
+  const clock = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+  }).format(new Date());
+  if (clock >= "20:00") date.setUTCDate(date.getUTCDate() + 1);
+  while (date.getUTCDay() === 0 || date.getUTCDay() === 6) date.setUTCDate(date.getUTCDate() + 1);
   return date.toISOString().slice(0, 10);
 }
 
 async function loadAvailability() {
+  const requestId = ++state.availabilityRequest;
   const select = $("#booking-slot");
   const date = $("#booking-date").value;
   const serviceIds = [...document.querySelectorAll('input[name="serviceIds"]:checked')].map((input) => input.value);
@@ -229,6 +233,7 @@ async function loadAvailability() {
     const barberId = $("#barber-select").value;
     if (barberId) params.set("barberId", barberId);
     const result = await api(`/api/availability?${params.toString()}`);
+    if (requestId !== state.availabilityRequest) return;
     const slots = result.data || [];
     select.replaceChildren(new Option(slots.length ? "เลือกเวลา" : "ไม่มีเวลาว่าง", ""));
     slots.forEach((slot) => {
@@ -240,6 +245,7 @@ async function loadAvailability() {
     select.disabled = slots.length === 0;
     showMessage("#availability-state", slots.length ? `พบเวลาว่าง ${slots.length} ช่วง` : "ไม่มีเวลาว่างในวันที่เลือก");
   } catch (error) {
+    if (requestId !== state.availabilityRequest) return;
     select.replaceChildren(new Option("โหลดเวลาว่างไม่สำเร็จ", ""));
     showMessage("#availability-state", error.message, true);
   }
